@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- FONT DEFINITIONS --- */
+@font-face {
+  font-family: 'F1 Regular';
+  src: url('/fonts/Formula1-Regular.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'F1 Bold';
+  src: url('/fonts/Formula1-Bold.woff2') format('woff2');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'F1 Wide';
+  src: url('/fonts/Formula1-Wide.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+
+/* --- GENERAL STYLES --- */
+@layer base {
+  :root {
+    --background: 0 0% 0%; /* Pure black */
+    --foreground: 0 0% 98%;
+    
+    /* VIBRANT LIME GREEN */
+    --primary: 85 100% 50%;
+    --primary-foreground: 85 100% 10%;
+
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 85 100% 50%;
+    --accent-foreground: 85 100% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 85 100% 50%; /* Changed to neon */
+    --input: 0 0% 14.9%;
+    --ring: 85 100% 50%;
+    --radius: 0.75rem; /* Slightly larger radius */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border/20; /* Subtle default border */
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'F1 Regular', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  h1, h2, h3, h4, h5, h6, .font-headline {
+    font-family: 'F1 Bold', sans-serif;
+    text-transform: uppercase;
+  }
+  button, a {
+    font-family: 'F1 Regular', sans-serif;
+  }
+}
+
+/* --- BACKGROUND PATTERN --- */
+.pattern-bg {
+  background-color: transparent;
+  background-image:
+    radial-gradient(at 20% 80%, hsla(var(--primary), 0.1) 0px, transparent 50%),
+    radial-gradient(at 80% 20%, hsla(var(--primary), 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, hsla(var(--primary), 0.05) 0px, transparent 50%);
+}
+
+/* --- NEON & ANIMATION STYLES V4 (Final Readability) --- */
+@layer utilities {
+  /* No glow, just color */
+  .neon-text-main {
+    color: hsl(var(--primary));
+    text-shadow: none;
+  }
+
+  .neon-text-subtle {
+    color: hsl(var(--primary));
+    text-shadow: none;
+  }
+
+  .neon-pulse-box {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5), inset 0 0 5px hsl(var(--primary) / 0.4);
+    animation: pulse-glow-box 4s infinite ease-in-out;
+  }
+  
+  .svg-border-trace {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    transition: stroke-dashoffset 0.8s ease-in-out;
+  }
+  .group:hover .svg-border-trace {
+    stroke-dashoffset: 0;
+  }
+
+  .interactive-glow-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(
+      circle at var(--mouse-x) var(--mouse-y),
+      hsl(var(--primary) / 0.2),
+      hsl(var(--primary) / 0.1),
+      transparent 40%
+    );
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity 0.3s ease-in-out;
+    pointer-events: none;
+  }
+  .interactive-glow-card:hover::before {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-glow-box {
+  0%, 100% {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5), inset 0 0 5px hsl(var(--primary) / 0.4);
+  }
+  50% {
+    box-shadow: 0 0 18px hsl(var(--primary) / 0.7), inset 0 0 8px hsl(var(--primary) / 0.6);
+  }
+}
