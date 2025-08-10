@@ -58,15 +58,15 @@ export default async function AdminProductsPage() {
                 {products.map((product: Product) => (
                   <TableRow key={product.id}>
                     <TableCell className="hidden sm:table-cell">
-                       <Image
-                        alt={product.name}
-                        className="aspect-square rounded-md object-cover"
-                        height="64"
-                        src={product.imageUrl || '/placeholder.svg'}
-                        width="64"
-                      />
+                        <Image
+                          alt={product.name}
+                          className="aspect-square rounded-md object-cover"
+                          height={64}
+                          src={product.image_url || '/placeholder.svg'}
+                          width={64}
+                        />
                     </TableCell>
-                    <TableCell className="font-medium">{product.name} {product.isFeatured && <Badge>Destacado</Badge>}</TableCell>
+                    <TableCell className="font-medium">{product.name} {product.is_featured && <Badge>Destacado</Badge>}</TableCell>
                     <TableCell>{product.category}</TableCell>
                     <TableCell className="hidden md:table-cell">${product.price?.toFixed(2)}</TableCell>
                     <TableCell>

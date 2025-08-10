@@ -69,8 +69,8 @@ export default async function PistaDetailPage({ params }: { params: { id: string
   return (
     <>
       <div className="relative h-64 md:h-80 w-full mb-8">
-        <Image 
-          src={track.image_url || 'https://placehold.co/1200x400.png'} 
+        <Image
+          src={(track as any).image_url || (track as any).imageUrl || 'https://placehold.co/1200x400.png'}
           alt={`Vista panorámica de ${track.name}`}
           fill
           objectFit="cover"
@@ -121,11 +121,11 @@ export default async function PistaDetailPage({ params }: { params: { id: string
         
         {/* ---- MODIFICACIÓN ---- */}
         {/* Usamos el nuevo componente de galería interactivo */}
-        <ImageGallery images={track.gallery_image_urls || []} altText={`Galería de la pista ${track.name}`} />
+        <ImageGallery images={(track as any).gallery_image_urls || (track as any).galleryImageUrls || []} altText={`Galería de la pista ${track.name}`} />
 
-        {track.model_3d_url && (
+        {((track as any).model_3d_url || (track as any).model3dUrl) && (
             <div className="mt-8 md:mt-12">
-                <ModelViewer modelUrl={track.model_3d_url} />
+                <ModelViewer modelUrl={(track as any).model_3d_url || (track as any).model3dUrl} />
             </div>
         )}
         

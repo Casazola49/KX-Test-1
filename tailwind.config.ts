@@ -19,6 +19,14 @@ module.exports = {
         "2xl": "1400px",
       },
     },
+    screens: {
+      'xs': '375px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+      '2xl': '1536px',
+    },
     extend: {
       fontFamily: {
         sans: ["var(--font-sans)", ...fontFamily.sans],
@@ -76,10 +84,47 @@ module.exports = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "fade-in-up": {
+          from: { opacity: "0", transform: "translateY(30px)" },
+          to: { opacity: "1", transform: "translateY(0)" },
+        },
+        "pulse-text": {
+          "0%, 100%": { opacity: "1", transform: "scale(1)" },
+          "50%": { opacity: "0.8", transform: "scale(1.02)" },
+        },
+        "float": {
+          "0%, 100%": { transform: "translateY(0px) rotate(0deg)", opacity: "0.7" },
+          "50%": { transform: "translateY(-20px) rotate(180deg)", opacity: "1" },
+        },
+        "bounce-slow": {
+          "0%, 100%": { transform: "translateY(0)" },
+          "50%": { transform: "translateY(-10px)" },
+        },
+        "slide-right": {
+          "0%": { transform: "translateX(-100px)", opacity: "0" },
+          "50%": { opacity: "1" },
+          "100%": { transform: "translateX(100px)", opacity: "0" },
+        },
+        "slide-left": {
+          "0%": { transform: "translateX(100px)", opacity: "0" },
+          "50%": { opacity: "1" },
+          "100%": { transform: "translateX(-100px)", opacity: "0" },
+        },
+        "spin-slow": {
+          from: { transform: "rotate(0deg)" },
+          to: { transform: "rotate(360deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in-up": "fade-in-up 1s ease-out",
+        "pulse-text": "pulse-text 3s ease-in-out infinite",
+        "float": "float 6s ease-in-out infinite",
+        "bounce-slow": "bounce-slow 3s ease-in-out infinite",
+        "slide-right": "slide-right 4s ease-in-out infinite",
+        "slide-left": "slide-left 4s ease-in-out infinite",
+        "spin-slow": "spin-slow 8s linear infinite",
       },
     },
   },

@@ -3,11 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "kill-port 9008 && next dev --turbo -p 9008",
+    "dev": "next dev --turbo -p 9008",
     "build": "next build",
+    "build:analyze": "ANALYZE=true next build",
+    "analyze": "node scripts/analyze-bundle.js",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "pre-deploy": "node scripts/pre-deploy-check.js",
+    "deploy-check": "npm run typecheck && npm run lint && npm run build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",
@@ -39,6 +43,7 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
+    "dotenv": "^16.6.1",
     "embla-carousel-autoplay": "^8.6.0",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^10.12.2",
@@ -58,20 +63,25 @@
     "tailwindcss-animate": "^1.0.7",
     "three": "^0.167.1",
     "uuid": "^11.1.0",
+    "web-vitals": "^5.1.0",
     "yet-another-react-lightbox": "^3.25.0",
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.4.6",
+    "@svgr/webpack": "^8.1.0",
     "@types/js-cookie": "^3.0.6",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "18",
     "@types/three": "^0.167.0",
     "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.4.21",
     "copy-webpack-plugin": "^13.0.0",
     "kill-port": "^2.0.1",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
-    "typescript": "^5"
+    "typescript": "^5",
+    "webpack-bundle-analyzer": "^4.10.2"
   }
 }

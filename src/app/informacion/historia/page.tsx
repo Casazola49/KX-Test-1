@@ -2,6 +2,7 @@ import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
+import AdBanner from '@/components/shared/AdBanner';
 
 export default function HistoriaPage() {
   return (
@@ -11,14 +12,16 @@ export default function HistoriaPage() {
         <Card className="p-6 md:p-8 lg:p-10 shadow-lg">
           <CardContent className="prose prose-lg dark:prose-invert max-w-none">
             <div className="float-right ml-6 mb-4 w-full md:w-1/3">
-              <Image 
-                src="https://placehold.co/600x400.png" 
-                alt="Foto histórica de karting en Bolivia" 
-                width={600} 
-                height={400} 
-                className="rounded-lg shadow-md"
-                data-ai-hint="vintage karting race" 
-              />
+              <div className="rounded-lg overflow-hidden shadow-lg bg-muted">
+                <Image 
+                  src="/images/historia-karting.png" 
+                  alt="Foto histórica de karting en Bolivia" 
+                  width={600} 
+                  height={400} 
+                  className="w-full h-auto object-contain"
+                  priority
+                />
+              </div>
               <p className="text-xs text-center text-muted-foreground mt-1">Imagen de archivo de los inicios del karting.</p>
             </div>
             <p>
@@ -48,6 +51,8 @@ export default function HistoriaPage() {
             </p>
           </CardContent>
         </Card>
+        
+        <AdBanner />
       </Section>
     </>
   );

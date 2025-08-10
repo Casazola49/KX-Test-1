@@ -25,7 +25,7 @@ const supabaseAdmin = createClient(
 
 
 // --- Acción para Actualizar Configuración del Stream ---
-export async function updateLiveStreamSettings(formData: FormData) {
+export async function updateLiveStreamSettings(formData: FormData): Promise<void> {
   const validatedFields = LiveStreamSchema.safeParse({
     is_live: formData.get('is_live') === 'on',
     stream_title: formData.get('stream_title') as string,
@@ -33,7 +33,7 @@ export async function updateLiveStreamSettings(formData: FormData) {
   });
 
   if (!validatedFields.success) {
-    return { error: validatedFields.error.flatten().fieldErrors };
+    throw new Error(JSON.stringify(validatedFields.error.flatten().fieldErrors));
   }
 
   try {
@@ -51,10 +51,8 @@ export async function updateLiveStreamSettings(formData: FormData) {
 
     revalidatePath('/live');
     revalidatePath('/admin/live');
-
-    return { success: true, message: 'Configuración actualizada con éxito.' };
   } catch (error: any) {
-    return { success: false, error: `Error al actualizar: ${error.message}` };
+    throw new Error(`Error al actualizar: ${error.message}`);
   }
 }
 

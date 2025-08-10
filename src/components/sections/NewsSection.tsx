@@ -1,6 +1,6 @@
 
 'use client';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Autoplay from 'embla-carousel-autoplay';
 import { Button } from '@/components/ui/button';
@@ -15,34 +15,76 @@ interface NewsSectionProps {
 }
 
 export default function NewsSection({ news, condensed = true, showTitle = true }: NewsSectionProps) {
-  const plugin = useRef(
-    Autoplay({ delay: 10000, stopOnInteraction: true })
-  );
+  // Crear una nueva instancia del plugin cada vez para evitar problemas de estado
+  const autoplayPlugin = useRef<any>(null);
+  
+  // Inicializar el plugin
+  if (!autoplayPlugin.current) {
+    autoplayPlugin.current = Autoplay({ 
+      delay: 5000, 
+      stopOnInteraction: false,
+      stopOnMouseEnter: true,
+      stopOnFocusIn: false,
+      playOnInit: true
+    });
+  }
 
   // Si no hay noticias, no renderizar nada.
   if (!news || news.length === 0) {
     return (
         <div className="container mx-auto px-4 text-center py-12">
-            <p className="text-white">No hay noticias disponibles en este momento.</p>
+            <p className="text-muted-foreground">No hay noticias disponibles en este momento.</p>
         </div>
     );
   }
 
-  const mainNews = condensed ? news.slice(0, 3) : [];
+  const mainNews = condensed ? news.slice(0, 4) : []; // Cambiado a 4 noticias para el carrusel
   const latestNews = condensed ? news.slice(0, 4) : news;
 
+  // Asegurar que el autoplay se inicie correctamente
+  useEffect(() => {
+    if (mainNews.length > 1) {
+      console.log('Iniciando autoplay del carrusel de noticias con', mainNews.length, 'noticias');
+      
+      // Múltiples intentos para asegurar que se inicie
+      const timer1 = setTimeout(() => {
+        autoplayPlugin.current.play();
+      }, 100);
+      
+      const timer2 = setTimeout(() => {
+        autoplayPlugin.current.reset();
+        autoplayPlugin.current.play();
+      }, 1000);
+      
+      return () => {
+        clearTimeout(timer1);
+        clearTimeout(timer2);
+      };
+    }
+  }, [mainNews.length]);
+
   return (
-    <section className="py-12 md:py-24 bg-gray-900 pattern-bg">
+    <section className="py-12 md:py-24 bg-background">
       <div className="container mx-auto px-4">
-        {showTitle && <h2 className="text-3xl md:text-5xl font-bold text-center mb-12 text-white">Últimas Noticias</h2>}
+        {showTitle && <h2 className="text-3xl md:text-5xl font-f1-bold text-center mb-12 text-foreground">Últimas Noticias</h2>}
         
         {condensed && mainNews.length > 0 && (
           <Carousel 
             className="w-full max-w-4xl mx-auto mb-16" 
-            opts={{ loop: true }}
-            plugins={[plugin.current]}
-            onMouseEnter={plugin.current.stop}
-            onMouseLeave={plugin.current.reset}
+            opts={{ 
+              loop: true, 
+              align: "start",
+              skipSnaps: false,
+              dragFree: false
+            }}
+            plugins={[autoplayPlugin.current]}
+            onMouseEnter={() => {
+              autoplayPlugin.current.stop();
+            }}
+            onMouseLeave={() => {
+              autoplayPlugin.current.reset();
+              autoplayPlugin.current.play();
+            }}
           >
             <CarouselContent>
               {mainNews.map((item) => (
@@ -53,8 +95,8 @@ export default function NewsSection({ news, condensed = true, showTitle = true }
                 </CarouselItem>
               ))}
             </CarouselContent>
-            <CarouselPrevious className="text-white" />
-            <CarouselNext className="text-white" />
+            <CarouselPrevious className="text-foreground border-border hover:bg-accent" />
+            <CarouselNext className="text-foreground border-border hover:bg-accent" />
           </Carousel>
         )}
 
@@ -67,7 +109,7 @@ export default function NewsSection({ news, condensed = true, showTitle = true }
         {condensed && (
           <div className="text-center">
             <Link href="/noticias">
-              <Button variant="outline" size="lg" className="text-white border-white hover:bg-white hover:text-gray-900 transition-colors">
+              <Button variant="outline" size="lg" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-colors">
                 Ver todas las noticias
               </Button>
             </Link>

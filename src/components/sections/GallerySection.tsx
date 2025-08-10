@@ -15,7 +15,7 @@ export default function GallerySection({ images }: GallerySectionProps) {
   const hasImages = images && images.length > 0;
 
   return (
-    <Section title="Galería">
+    <Section title="Galería" subtitle="Últimas imágenes">
       {hasImages ? (
         <>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -27,7 +27,7 @@ export default function GallerySection({ images }: GallerySectionProps) {
           </div>
           <div className="text-center mt-12">
             <Link href="/galeria">
-              <Button variant="outline" size="lg" className="text-white border-white hover:bg-white hover:text-gray-900 transition-colors">
+              <Button variant="outline" size="lg" className="border-foreground text-foreground hover:bg-foreground hover:text-background transition-colors">
                 Ir a la galería completa
               </Button>
             </Link>

@@ -3,6 +3,7 @@ import Section from '@/components/shared/Section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Zap, Globe, Wrench } from 'lucide-react';
 import Image from 'next/image';
+import AdBanner from '@/components/shared/AdBanner';
 
 const futureAspects = [
   {
@@ -40,13 +41,14 @@ export default function FuturoPage() {
             </p>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-            <div className="relative aspect-video rounded-lg overflow-hidden shadow-lg">
+            <div className="rounded-lg overflow-hidden shadow-lg bg-muted">
                 <Image 
-                    src="https://placehold.co/600x338.png" 
+                    src="/images/futuro-karting.png" 
                     alt="Visión futura del karting" 
-                    layout="fill" 
-                    objectFit="cover"
-                    data-ai-hint="futuristic karting concept"
+                    width={600}
+                    height={338}
+                    className="w-full h-auto object-contain"
+                    priority
                 />
             </div>
             <div className="space-y-6">
@@ -83,6 +85,8 @@ export default function FuturoPage() {
          <p className="mt-12 text-center text-muted-foreground">
             <em>KartXperience Bolivia se compromete a ser un actor clave en la configuración de este emocionante futuro.</em>
         </p>
+        
+        <AdBanner />
       </Section>
     </>
   );

@@ -11,8 +11,6 @@ export const NAVIGATION_LINKS: NavItem[] = [
   { label: 'Pistas', href: '/pistas' },
   { label: 'Calendario', href: '/calendario' },
   { label: 'Galería', href: '/galeria' },
-  { label: 'Reglamento', href: '/reglamento' },
-  { label: 'Kart', href: '/kart' },
   { label: 'Equipamiento y Servicios', href: '/equipamiento-servicios' }, // Nueva Sección
   { label: 'Cómo ser Piloto', href: '/como-ser-piloto' },
   { 
@@ -24,8 +22,16 @@ export const NAVIGATION_LINKS: NavItem[] = [
       { label: 'Futuro del Karting', href: '/informacion/futuro' },
     ]
   },
-  { label: 'Carrera en Vivo', href: '/live'},
-  { label: 'Contacto', href: '/contacto' },
+  {
+    label: 'Más',
+    href: '#',
+    subItems: [
+      { label: 'Reglamento', href: '/reglamento' },
+      { label: 'Kart', href: '/kart' },
+      { label: 'Carrera en Vivo', href: '/live' },
+      { label: 'Contacto', href: '/contacto' },
+    ]
+  },
 ];
 
 export const NEXT_RACE_DATE = new Date('2025-07-25T10:00:00'); 

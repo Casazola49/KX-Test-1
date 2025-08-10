@@ -15,10 +15,10 @@ const AdBanner: React.FC<AdBannerProps> = ({ className }) => {
         <Image 
           src="/publicidad/publicidad vertical.png" 
           alt="Publicidad KartXperience Bolivia"
-          layout="fill"
-          objectFit="cover" 
+          fill
+          style={{ objectFit: 'cover' }}
           data-ai-hint="advertisement banner"
-          priority // Consider priority if it's often above the fold or important
+          priority
         />
       </div>
     </div>

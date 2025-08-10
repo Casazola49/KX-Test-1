@@ -10,9 +10,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { Trash2, PlusCircle } from 'lucide-react';
 import { createEventWithPodiums, updateEventWithPodiums } from '@/app/admin/events/actions';
 import { useRouter } from 'next/navigation';
+import { useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import ImageUploader from './ImageUploader';
 import { FieldErrors } from 'react-hook-form';
@@ -26,8 +28,13 @@ const formatDateForInput = (date: Date) => {
 
 const podiumResultSchema = z.object({
   id: z.string().optional(),
-  pilotId: z.string().min(1, 'Debes seleccionar un piloto.'),
+  pilotId: z.string().optional(),
+  isGuest: z.boolean().optional().default(false),
+  guestName: z.string().optional(),
   resultValue: z.string().optional(),
+}).refine((val) => (val.isGuest ? !!val.guestName : !!val.pilotId), {
+  message: 'Debes seleccionar un piloto o marcar Invitado y escribir su nombre.',
+  path: ['pilotId'],
 });
 
 // CHANGE 1: Allow a variable number of results
@@ -48,6 +55,8 @@ const eventFormSchema = z.object({
   promotionalImage: z.any().optional(),
   galleryImages: z.any().optional(),
   podiums: z.array(podiumSchema).optional(),
+  // Campo fantasma que usamos solo para validar que ya existe imagen previa en modo edición
+  existingPromotionalImage: z.string().optional(),
 }).refine(data => {
     return (data as any).existingPromotionalImage || (data.promotionalImage && data.promotionalImage.length > 0);
 }, {
@@ -80,8 +89,8 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
   const { toast } = useToast();
   const isEditMode = !!eventToEdit;
 
-  const [initialDate, initialTime] = eventToEdit?.event_date 
-    ? formatDateForInput(new Date(eventToEdit.event_date)) 
+  const [initialDate, initialTime] = (eventToEdit as any)?.event_date 
+    ? formatDateForInput(new Date((eventToEdit as any).event_date)) 
     : ['', ''];
 
   const form = useForm<EventFormValues>({
@@ -93,15 +102,30 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
         trackId: eventToEdit.track_id,
         description: eventToEdit.description || '',
         existingPromotionalImage: eventToEdit.promotional_image_url,
-        podiums: eventToEdit.podiums.map(p => ({
-            ...p,
-            // Sort results by position before mapping
-            results: p.results.sort((a, b) => a.position - b.position)
-        })) || [],
+        // Mapear estructura de la BD -> estructura del formulario preservando IDs
+        podiums: (eventToEdit.podiums || []).map((p: any) => ({
+            id: p.id,
+            categoryId: p.category_id,
+            podiumType: p.podium_type,
+            determinationMethod: p.determination_method,
+            results: (p.results || [])
+              .slice()
+              .sort((a: any, b: any) => a.position - b.position)
+              .map((r: any) => ({
+                id: r.id,
+                pilotId: r.pilot_id,
+                resultValue: r.result_value ?? '',
+              })),
+        })),
     } : {
         name: '', eventDate: '', eventTime: '09:00', trackId: '', description: '', podiums: [],
     },
   });
+
+  // Ordenar pilotos alfabéticamente (soporta acentos)
+  const sortedPilots = useMemo(() => {
+    return [...pilots].sort((a, b) => a.fullName.localeCompare(b.fullName, 'es', { sensitivity: 'base' }));
+  }, [pilots]);
 
     const { fields, append, remove } = useFieldArray({
         control: form.control,
@@ -178,7 +202,7 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
             <div className="mt-4 space-y-4">
                 <div className="flex justify-between items-center">
                     <h4 className="font-semibold">Resultados</h4>
-                    <Button type="button" size="sm" variant="outline" onClick={() => appendResult({ pilotId: '', resultValue: '' })}>
+                    <Button type="button" size="sm" variant="outline" onClick={() => appendResult({ pilotId: '', isGuest: false, guestName: '', resultValue: '' })}>
                         <PlusCircle className="mr-2 h-4 w-4"/> Añadir Piloto
                     </Button>
                 </div>
@@ -187,11 +211,42 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
                         <Controller control={form.control} name={`podiums.${podiumIndex}.results.${resultIndex}.pilotId`} render={({ field: fieldPilot }) => (
                             <FormItem>
                                 <FormLabel>Puesto {resultIndex + 1}</FormLabel>
-                                <Select onValueChange={fieldPilot.onChange} defaultValue={fieldPilot.value}>
+                                {/* Toggle de piloto invitado */}
+                                <div className="flex items-center gap-3 mb-2">
+                                  <Switch
+                                    checked={form.watch(`podiums.${podiumIndex}.results.${resultIndex}.isGuest`) || false}
+                                    onCheckedChange={(checked) => {
+                                      form.setValue(`podiums.${podiumIndex}.results.${resultIndex}.isGuest`, checked);
+                                      if (checked) {
+                                        form.setValue(`podiums.${podiumIndex}.results.${resultIndex}.pilotId`, '');
+                                      }
+                                    }}
+                                  />
+                                  <span className="text-sm">Piloto invitado (no registrado)</span>
+                                </div>
+                                {!form.watch(`podiums.${podiumIndex}.results.${resultIndex}.isGuest`) ? (
+                                  <Select onValueChange={fieldPilot.onChange} value={fieldPilot.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un piloto" /></SelectTrigger></FormControl>
-                                    <SelectContent>{pilots.map((p) => (<SelectItem key={p.id} value={p.id}>{p.fullName}</SelectItem>))}</SelectContent>
-                                </Select>
+                                    <SelectContent>
+                                      {sortedPilots.map((p) => (
+                                        <SelectItem key={p.id} value={p.id}>{p.fullName}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Controller
+                                    control={form.control}
+                                    name={`podiums.${podiumIndex}.results.${resultIndex}.guestName`}
+                                    render={({ field: guestField }) => (
+                                      <Input placeholder="Nombre completo del piloto invitado" {...guestField} />
+                                    )}
+                                  />
+                                )}
                                 <FormMessage/>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  ¿No encuentras al piloto? Añádelo en otra pestaña:
+                                  <a href="/admin/add-pilot" target="_blank" rel="noopener noreferrer" className="underline ml-1">Crear piloto</a>
+                                </div>
                             </FormItem>
                         )} />
                         <Controller control={form.control} name={`podiums.${podiumIndex}.results.${resultIndex}.resultValue`} render={({ field: fieldResult }) => (
@@ -229,7 +284,13 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
                     <FormLabel>Imagen Promocional Principal</FormLabel>
                     <FormControl><ImageUploader field={field} /></FormControl>
                     <FormDescription>Esta es la imagen principal que se mostrará en la cabecera.</FormDescription>
-                    {isEditMode && eventToEdit.promotional_image_url && !field.value && <div className="mt-2 text-sm text-muted-foreground">Imagen actual: <a href={eventToEdit.promotional_image_url} target="_blank" rel="noopener noreferrer" className="underline">ver imagen</a></div>}
+                    {/* Mostrar imagen actual y marcar existingPromotionalImage para saltar validación */}
+                    {isEditMode && eventToEdit.promotional_image_url && !field.value && (
+                      <>
+                        <input type="hidden" value={eventToEdit.promotional_image_url} {...form.register('existingPromotionalImage' as any)} />
+                        <div className="mt-2 text-sm text-muted-foreground">Imagen actual: <a href={eventToEdit.promotional_image_url} target="_blank" rel="noopener noreferrer" className="underline">ver imagen</a></div>
+                      </>
+                    )}
                     <FormMessage />
                 </FormItem>
             )} />
@@ -258,9 +319,11 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
                 {fields.map((field, index) => (
                     <Card key={field.id} className="p-4 relative border-2 data-[invalid]:border-destructive" data-invalid={!!form.formState.errors.podiums?.[index]}>
                         <Button type="button" variant="ghost" size="icon" className="absolute top-2 right-2" onClick={() => remove(index)}><Trash2 className="h-4 w-4 text-red-500"/></Button>
+                        {/* Preservar ID del podio para updates */}
+                        <input type="hidden" {...form.register(`podiums.${index}.id` as const)} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <Controller control={form.control} name={`podiums.${index}.podiumType`} render={({ field: fieldType }) => ( <FormItem><FormLabel>Tipo de Resultado</FormLabel><Select onValueChange={(value) => handlePodiumTypeChange(value, index)} defaultValue={fieldType.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl><SelectContent>{Object.entries(podiumTypeLabels).map(([key, label]) => ( <SelectItem key={key} value={key}>{label}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )} />
-                           <Controller control={form.control} name={`podiums.${index}.categoryId`} render={({ field: fieldCategory }) => ( <FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={fieldCategory.onChange} defaultValue={fieldCategory.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger></FormControl><SelectContent>{categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                           <Controller control={form.control} name={`podiums.${index}.podiumType`} render={({ field: fieldType }) => ( <FormItem><FormLabel>Tipo de Resultado</FormLabel><Select onValueChange={(value) => handlePodiumTypeChange(value, index)} value={fieldType.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl><SelectContent>{Object.entries(podiumTypeLabels).map(([key, label]) => ( <SelectItem key={key} value={key}>{label}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )} />
+                           <Controller control={form.control} name={`podiums.${index}.categoryId`} render={({ field: fieldCategory }) => ( <FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={fieldCategory.onChange} value={fieldCategory.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger></FormControl><SelectContent>{categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem> )}/>
                         </div>
                         {/* CHANGE 3: Use the new dynamic results component */}
                         <ResultsArray podiumIndex={index} />

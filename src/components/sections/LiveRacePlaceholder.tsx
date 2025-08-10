@@ -10,7 +10,7 @@ interface LiveRacePlaceholderProps {
 const LiveRacePlaceholder: React.FC<LiveRacePlaceholderProps> = ({ raceName }) => {
   return (
     // Usamos el nombre de la carrera si está disponible, si no, un texto por defecto.
-    <Section title={raceName ? `Carrera en Vivo: ${raceName}` : "Carrera en Vivo"} subtitle="Próximamente" className="bg-gradient-to-b from-card to-background">
+    <Section title={raceName ? `🔴 EN VIVO: ${raceName}` : "🔴 Carrera en Vivo"} subtitle="Transmisión en directo" className="bg-gradient-to-b from-red-900/20 to-background">
       <Card className="text-center shadow-xl border-primary/50">
         <CardHeader>
           <div className="mx-auto w-fit p-4 bg-primary/10 rounded-full mb-4">

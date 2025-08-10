@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Section from '@/components/shared/Section';
 import PodiumDisplay from '@/components/client/PodiumDisplay';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,6 +35,11 @@ function CategoryClassification({ categoryName, podiums }: CategoryClassificatio
 
     const sortedPodiums = [...podiums].sort((a, b) => podiumTypeOrder.indexOf(a.podium_type) - podiumTypeOrder.indexOf(b.podium_type));
     const [selectedPodiumId, setSelectedPodiumId] = useState(sortedPodiums[0]?.id || '');
+    
+    // Resetear la selección cuando cambia la categoría o los podios recibidos
+    useEffect(() => {
+        setSelectedPodiumId(sortedPodiums[0]?.id || '');
+    }, [categoryName, podiums]);
     const selectedPodium = useMemo(() => sortedPodiums.find(p => p.id === selectedPodiumId), [selectedPodiumId, sortedPodiums]);
 
     if (sortedPodiums.length === 0) return null;
@@ -85,7 +90,7 @@ export default function HomepagePodium({ podium }: HomepagePodiumProps) {
     const [selectedCategory, setSelectedCategory] = useState(categories[0] || '');
 
     return (
-        <Section title="Último Podio" subtitle={eventName}>
+        <Section title={`Último Podio${eventName ? ` - ${eventName}` : ''}`} subtitle={eventName ? "Resultados Oficiales" : ""}>
             {categories.length > 0 ? (
                 <div className="space-y-8">
                     {categories.length > 1 && (
@@ -99,6 +104,7 @@ export default function HomepagePodium({ podium }: HomepagePodiumProps) {
                     )}
                     {selectedCategory && groupedPodiums[selectedCategory] && (
                         <CategoryClassification 
+                            key={selectedCategory}
                             categoryName={selectedCategory}
                             podiums={groupedPodiums[selectedCategory]}
                         />

@@ -2,7 +2,7 @@
 import NewsSection from '@/components/sections/NewsSection';
 import PageTitle from '@/components/shared/PageTitle';
 import AdBanner from '@/components/shared/AdBanner';
-import type { NewsArticle } from '@/lib/types';
+import type { News } from '@/lib/types';
 import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
@@ -21,7 +21,7 @@ async function getNews() {
       .order('date', { ascending: false });
 
     if (error) throw error;
-    return (data as NewsArticle[]) || [];
+    return (data as any[]) || [];
   } catch (error) {
     console.error("Error fetching news from Supabase:", error);
     return [];
@@ -34,7 +34,7 @@ export default async function NoticiasPage() {
   return (
     <>
       <PageTitle title="Noticias" subtitle="KartXperience Bolivia" />
-      <NewsSection condensed={false} showTitle={false} news={articles} />
+      <NewsSection condensed={false} showTitle={false} news={articles as unknown as News[]} />
       <AdBanner />
     </>
   );

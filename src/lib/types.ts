@@ -18,7 +18,7 @@ export interface Pilot {
     dob?: string;
     city?: string;
     bio?: string;
-    achievements?: string;
+    achievements?: string[];
     yearsOfExperience?: number;
     teamOrigin?: string;
     performanceHistory?: string;
@@ -38,6 +38,23 @@ export interface Track {
     infrastructure?: string;
     width?: number;
     model_3d_url?: string;
+}
+
+// Shape used by admin TrackForm and edit page
+export interface TrackInfo {
+  id: string;
+  name: string;
+  location: string;
+  description?: string;
+  length?: string;
+  width?: string;
+  curves?: number;
+  altitude?: string;
+  record?: string;
+  max_speed?: string;
+  infrastructure?: string[];
+  imageUrl?: string;
+  galleryImageUrls?: string[];
 }
 
 /**
@@ -91,6 +108,7 @@ export interface PodiumResult {
     position: number;
     result_value: string; // Can be time or points
     pilot: Pilot;
+    guest_name?: string;
 }
 
 export interface FullPodium {
@@ -147,6 +165,29 @@ export interface GroupedPodiums {
     [categoryName: string]: FullPodium[];
 }
 
+export interface Standing {
+  id: string;
+  pilotId: string;
+  points: number;
+  category: string;
+  eventId?: string | null;
+  pilotName?: string;
+  pilotImageUrl?: string | null;
+  trackId?: string;
+  type?: 'points' | 'time_trial';
+  created_at?: string;
+}
+
+// Kart entity used in Admin > Karts and client components
+export interface Kart {
+    id: string;
+    name: string;
+    category: string;
+    description?: string;
+    model_url: string;
+    created_at?: string;
+}
+
 export interface Product {
     id: string;
     name: string;
@@ -169,6 +210,18 @@ export interface Auspicio {
     level: 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONCE' | 'COLABORADOR';
 }
 
+// Tipo usado por la sección de auspicios (detalles de producto/servicio)
+export interface AuspicioItem {
+  id: string;
+  slug: string;
+  title: string;
+  content: string; // HTML renderizado en detalle
+  galleryImageUrls: string[]; // URLs públicas de imágenes
+  aiHint?: string;
+  website_url?: string;
+  level?: 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONCE' | 'COLABORADOR';
+}
+
 export interface LiveMessage {
     id: string;
     created_at: string;
@@ -181,4 +234,29 @@ export interface LiveStream {
     event_id: string;
     is_live: boolean;
     stream_url?: string;
+}
+
+export interface Mechanic {
+  id: string;
+  name: string;
+  description?: string;
+  phone?: string;
+  email?: string;
+  service_area?: string;
+  avatar_url?: string;
+  image_url?: string;
+  website_url?: string;
+  department?: string;
+  created_at?: string;
+}
+
+export interface NewsArticle {
+  id: string;
+  title: string;
+  summary?: string;
+  content: string;
+  image_url?: string;
+  created_at?: string;
+  slug?: string;
+  is_main?: boolean;
 }

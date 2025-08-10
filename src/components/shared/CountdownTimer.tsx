@@ -73,13 +73,43 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ date, onCountdownEnd })
       </div>
     );
   }
+
+
   
   return (
-    <div className="flex justify-center items-start flex-wrap p-0 gap-x-2 gap-y-1 sm:gap-x-3 md:gap-x-4 lg:gap-x-5">
-      <FlipUnit currentValue={timeLeft.days} label="DÍAS" className="animate-in fade-in zoom-in-90 duration-500" delay={0} />
-      <FlipUnit currentValue={timeLeft.hours} label="HORAS" className="animate-in fade-in zoom-in-90 duration-500" delay={100} />
-      <FlipUnit currentValue={timeLeft.minutes} label="MINUTOS" className="animate-in fade-in zoom-in-90 duration-500" delay={200} />
-      <FlipUnit currentValue={timeLeft.seconds} label="SEGUNDOS" className="animate-in fade-in zoom-in-90 duration-500" delay={300} />
+    <div className="flex flex-col items-center space-y-4 md:space-y-6">
+      <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-3 lg:space-x-4 p-2 sm:p-3 md:p-4 rounded-lg bg-card/20 backdrop-blur-sm border border-primary/20">
+        <FlipUnit
+          currentValue={timeLeft.days}
+          label="Días"
+          delay={0}
+        />
+        <div className="text-base sm:text-xl md:text-3xl lg:text-4xl text-primary font-bold animate-pulse">:</div>
+        <FlipUnit
+          currentValue={timeLeft.hours}
+          label="Horas"
+          delay={100}
+        />
+        <div className="text-base sm:text-xl md:text-3xl lg:text-4xl text-primary font-bold animate-pulse">:</div>
+        <FlipUnit
+          currentValue={timeLeft.minutes}
+          label="Minutos"
+          delay={200}
+        />
+        <div className="text-base sm:text-xl md:text-3xl lg:text-4xl text-primary font-bold animate-pulse">:</div>
+        <FlipUnit
+          currentValue={timeLeft.seconds}
+          label="Segundos"
+          delay={300}
+        />
+      </div>
+      
+      {/* Mensaje adicional */}
+      <div className="text-center">
+        <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
+          ¡No te pierdas la próxima carrera!
+        </p>
+      </div>
     </div>
   );
 };

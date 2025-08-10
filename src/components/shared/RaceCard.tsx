@@ -21,12 +21,12 @@ export default function RaceCard({ race }: RaceCardProps) {
   return (
     <Card className="overflow-hidden shadow-lg hover:shadow-primary/20 transition-shadow duration-300">
       <div className="grid grid-cols-1 md:grid-cols-3">
-        <div className="relative h-48 md:h-full">
+        <div className="relative h-48 md:h-full bg-black/30">
           <Image
             src={race.promotionalImageUrl || 'https://placehold.co/600x400.png'}
             alt={`Imagen del evento ${race.name}`}
             fill
-            style={{ objectFit: 'cover' }}
+            style={{ objectFit: 'contain' }}
             className="md:rounded-l-lg md:rounded-r-none"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />

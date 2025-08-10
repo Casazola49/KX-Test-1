@@ -57,7 +57,8 @@ export default async function EventDetailPage({ params }: { params: { id: string
     notFound();
   }
   
-  const eventDate = new Date(event.event_date);
+  // Soportar tanto event_date (BD) como date (tipo Event unificado)
+  const eventDate = new Date((event as any).event_date ?? (event as any).date);
   const isPast = eventDate < new Date();
 
   const formattedDate = eventDate.toLocaleDateString('es-ES', {
@@ -71,7 +72,7 @@ export default async function EventDetailPage({ params }: { params: { id: string
     <>
       <div className="relative h-64 md:h-80 w-full mb-8">
         <Image 
-          src={event.promotional_image_url || 'https://placehold.co/1200x400.png'} 
+          src={(event as any).promotional_image_url || (event as any).promotionalImageUrl || 'https://placehold.co/1200x400.png'} 
           alt={`Promoción para ${event.name}`}
           fill
           style={{objectFit:"cover"}}
@@ -113,9 +114,9 @@ export default async function EventDetailPage({ params }: { params: { id: string
                         <span className="text-muted-foreground">{trackName}, {location}</span>
                     </div>
                 </div>
-                {event.description && (
+                {(event as any).description && (
                     <div className="md:col-span-2 mt-4 pt-4 border-t border-border/50 text-base">
-                        <p className="text-muted-foreground whitespace-pre-line">{event.description}</p>
+                        <p className="text-muted-foreground whitespace-pre-line">{(event as any).description}</p>
                     </div>
                 )}
             </CardContent>
@@ -125,12 +126,12 @@ export default async function EventDetailPage({ params }: { params: { id: string
         {isPast ? (
             <div className="mt-12 space-y-12">
                 <EventPodiumResults podiums={event.podiums} />
-                <EventGallery imageUrls={event.gallery_image_urls || []} />
+                <EventGallery imageUrls={(event as any).gallery_image_urls || (event as any).galleryImageUrls || []} />
             </div>
         ) : (
             <div className="mt-12 text-center">
                  <h2 className="text-3xl font-bold font-headline mb-6 text-primary">¡La Carrera Comienza Pronto!</h2>
-                 <CountdownTimer date={event.event_date} />
+                 <CountdownTimer date={(event as any).event_date ?? (event as any).date} />
             </div>
         )}
 

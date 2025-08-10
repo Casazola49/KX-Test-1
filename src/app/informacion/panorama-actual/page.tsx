@@ -3,6 +3,7 @@ import Section from '@/components/shared/Section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Users, MapPin, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
+import AdBanner from '@/components/shared/AdBanner';
 
 const currentPanoramaPoints = [
   {
@@ -32,20 +33,120 @@ export default function PanoramaActualPage() {
     <>
       <PageTitle title="Panorama Actual del Karting" subtitle="Bolivia en la Pista" />
       <Section className="py-8 md:py-12">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-headline mb-4">El Karting Boliviano Hoy</h2>
-            <p className="text-muted-foreground leading-relaxed mb-4">
-              El karting en Bolivia vive un momento de renovado impulso, con una comunidad apasionada y un calendario de competencias cada vez más consolidado.
-              A pesar de los desafíos, el deporte sigue creciendo, formando nuevos talentos y ofreciendo un espectáculo emocionante en cada carrera.
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              La Federación Boliviana de Automovilismo Deportivo (FEBAD) y las asociaciones departamentales juegan un rol crucial en la organización y fiscalización
-              de las competencias, buscando siempre elevar el nivel y la seguridad del karting nacional.
-            </p>
+        {/* Título principal y descripción */}
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-primary mb-6">
+            Estructura Dirigencial del Karting Boliviano
+          </h2>
+          <p className="text-lg text-muted-foreground max-w-4xl mx-auto">
+            Para entender el pulso del karting en Bolivia, es fundamental conocer a las personas y las entidades que, con su liderazgo y dedicación, hacen posible que los motores sigan rugiendo en nuestras pistas.
+          </p>
+        </div>
+
+        {/* Imagen destacada */}
+        <div className="mb-12">
+          <div className="rounded-lg overflow-hidden shadow-lg bg-muted max-w-2xl mx-auto">
+            <Image
+              src="/images/panorama-karting.png"
+              alt="Panorama del karting boliviano - Estructura dirigencial"
+              width={600}
+              height={338}
+              className="w-full h-auto object-contain"
+              priority
+            />
           </div>
-          <div className="relative aspect-video rounded-lg overflow-hidden shadow-lg">
-             <Image src="https://placehold.co/600x338.png" alt="Karting moderno en Bolivia" layout="fill" objectFit="cover" data-ai-hint="modern kart race" />
+        </div>
+
+        {/* Contenido organizado en secciones */}
+        <div className="space-y-12">
+          {/* Comisión Nacional */}
+          <div className="bg-primary/5 p-6 rounded-lg border-l-4 border-primary">
+            <h3 className="text-2xl font-semibold text-primary mb-4">
+              Comisión Nacional de Karting (CNK) Bolivia
+            </h3>
+
+            <p className="text-muted-foreground mb-4">
+              Esta es la máxima autoridad del karting a nivel nacional, responsable de normar, organizar y promover la disciplina en todo el país, así como de coordinar los campeonatos nacionales.
+            </p>
+
+            <div className="bg-background p-4 rounded-lg border">
+              <p className="font-medium text-foreground">
+                <strong>Presidente:</strong> Sr. Iván Limachi<br />
+                <strong>Vicepresidente:</strong> Sr. Abel Iriarte
+              </p>
+            </div>
+          </div>
+
+          {/* Asociaciones Departamentales */}
+          <div>
+            <h3 className="text-2xl font-semibold text-primary mb-6 text-center">
+              Asociaciones Departamentales de Karting
+            </h3>
+
+            <p className="text-muted-foreground mb-8 text-center max-w-3xl mx-auto">
+              A nivel departamental, la pasión y la organización se gestionan a través de asociaciones locales. Ellas son las encargadas de organizar los campeonatos regionales, promover el desarrollo de pilotos y gestionar los kartódromos de su jurisdicción.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">Asociación de Karting Santa Cruz</h4>
+                <p className="text-sm text-foreground">
+                  <strong>Presidente:</strong> Sr. Jhasmany Hasse<br />
+                  <strong>Vicepresidenta:</strong> Sra. Ericka Bezerra
+                </p>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">Asociación de Karting La Paz</h4>
+                <p className="text-sm text-foreground">
+                  <strong>Presidente:</strong> Sr. Alejandro Ascarrunz<br />
+                  <strong>Vicepresidente:</strong> Sr. Raúl Márquez
+                </p>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">Asociación de Karting Potosí</h4>
+                <p className="text-sm text-foreground">
+                  <strong>Presidente:</strong> Sr. Jaime Cervantes<br />
+                  <strong>Vicepresidente:</strong> Sr. Wilson Huanaco
+                </p>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">Asociación de Karting Chuquisaca</h4>
+                <p className="text-sm text-foreground">
+                  <strong>Presidente:</strong> Sr. Carlos Keneth Incata Doria Medina<br />
+                  <strong>Vicepresidente:</strong> Sr. José Francisco Iporre Hinojosa
+                </p>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">Asociación de Karting Tarija</h4>
+                <p className="text-sm text-foreground">
+                  <strong>Presidente:</strong> Sr. Luis Antonio Pereira Gallardo<br />
+                  <strong>Vicepresidente:</strong> Sr. Delfín Isidro Herrera Mamani
+                </p>
+              </div>
+
+              <div className="bg-muted/50 p-4 rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2">Asociación de Karting Cochabamba</h4>
+                <p className="text-sm text-foreground">
+                  <strong>Presidente:</strong> Sr. Andrés Jiménez<br />
+                  <strong>Vicepresidente:</strong> (Información pendiente de confirmación)
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mensaje final */}
+          <div className="bg-primary/5 p-6 rounded-lg border-l-4 border-primary">
+            <p className="text-foreground mb-4 text-center">
+              Esta estructura es el esqueleto que sostiene la competición y el desarrollo del karting en cada rincón de Bolivia. Son estas personas, con su visión y su trabajo incansable, quienes aseguran que el futuro de nuestro deporte siga acelerando.
+            </p>
+
+            <p className="text-foreground text-center">
+              En <strong className="text-primary">KartXperience</strong>, valoramos enormemente el compromiso de estos dirigentes. Su labor es fundamental para que los pilotos tengan pistas, regulaciones claras y un calendario que les permita demostrar su talento.
+            </p>
           </div>
         </div>
 
@@ -64,9 +165,11 @@ export default function PanoramaActualPage() {
             </Card>
           ))}
         </div>
-         <p className="mt-12 text-center text-muted-foreground">
-            <em>Esta sección está en constante actualización para reflejar los últimos acontecimientos del karting en Bolivia.</em>
+        <p className="mt-12 text-center text-muted-foreground">
+          <em>Esta sección está en constante actualización para reflejar los últimos acontecimientos del karting en Bolivia.</em>
         </p>
+
+        <AdBanner />
       </Section>
     </>
   );

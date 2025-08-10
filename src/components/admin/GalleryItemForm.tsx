@@ -32,11 +32,11 @@ const slugify = (text: string) => {
     .replace(/-+$/, '');            // Elimina - del final
 };
 
-// Esquema para validar los datos del formulario, con título y slug
+// Esquema para validar los datos del formulario
 const FormSchema = z.object({
   title: z.string().min(3, "El título es obligatorio y debe tener al menos 3 caracteres."),
-  slug: z.string().min(3, "El slug es obligatorio."),
   description: z.string().optional(),
+  alt: z.string().optional(),
   eventId: z.string(),
   tags: z.string().optional(),
 });
@@ -63,20 +63,14 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
     resolver: zodResolver(FormSchema),
     defaultValues: {
       title: item?.title || "",
-      slug: item?.slug || "",
       description: item?.description || "",
+      alt: item?.description || item?.title || "",
       eventId: item?.eventId || 'none',
       tags: item?.tags?.join(', ') || '',
     },
   });
 
-  // Observar el campo 'title' y actualizar 'slug'
-  const titleValue = form.watch("title");
-  useEffect(() => {
-    if (titleValue) {
-      form.setValue("slug", slugify(titleValue), { shouldValidate: true });
-    }
-  }, [titleValue, form]);
+  // Ya no se usa slug (la tabla no lo tiene)
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -111,14 +105,15 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
         imageUrl = await uploadFileToSupabase(mediaFile);
       }
       
-      const payload = {
+       const payload = {
         id: item?.id,
-        title: data.title,
-        slug: data.slug,
+         title: data.title,
         src: imageUrl,
-        description: data.description,
+         description: data.description,
+         alt: data.alt && data.alt.trim().length > 0 ? data.alt : data.title,
         eventId: data.eventId === 'none' ? null : data.eventId,
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+         type: 'image',
       };
 
       const result = await saveGalleryItem(payload);
@@ -164,9 +159,11 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
 
         <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Título</FormLabel><FormControl><Input placeholder="Ej: Podio de la carrera de Sucre" {...field} /></FormControl><FormMessage /></FormItem>)} />
         
-        <FormField control={form.control} name="slug" render={({ field }) => (<FormItem className="hidden"><FormLabel>Slug</FormLabel><FormControl><Input {...field} readOnly /></FormControl><FormMessage /></FormItem>)} />
+        {/* slug eliminado */}
         
         <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Fotógrafo (Opcional)</FormLabel><FormControl><Input placeholder="Nombre del fotógrafo" {...field} /></FormControl></FormItem>)} />
+
+        <FormField control={form.control} name="alt" render={({ field }) => (<FormItem><FormLabel>Texto alternativo (ALT)</FormLabel><FormControl><Input placeholder="Descripción corta de la imagen (mejora SEO y accesibilidad)" {...field} /></FormControl><FormDescription>Si lo dejas vacío, se usará el título.</FormDescription></FormItem>)} />
         
         <FormField
           control={form.control}

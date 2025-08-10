@@ -1,0 +1,73 @@
+<svg width="800" height="1000" xmlns="http://www.w3.org/2000/svg">
+  <rect width="100%" height="100%" fill="#f8f9fa"/>
+  <rect x="50" y="50" width="700" height="900" fill="white" stroke="#dee2e6" stroke-width="2"/>
+  
+  <!-- Header -->
+  <rect x="50" y="50" width="700" height="80" fill="#28a745"/>
+  <text x="400" y="100" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="24" font-weight="bold">
+    REGLAMENTO F200 STANDARD 2025
+  </text>
+  
+  <!-- Content -->
+  <text x="80" y="180" fill="#333" font-family="Arial, sans-serif" font-size="18" font-weight="bold">
+    KARTXPERIENCE BOLIVIA
+  </text>
+  
+  <text x="80" y="220" fill="#666" font-family="Arial, sans-serif" font-size="14">
+    Reglamento Técnico y Deportivo
+  </text>
+  
+  <text x="80" y="260" fill="#333" font-family="Arial, sans-serif" font-size="16" font-weight="bold">
+    1. ESPECIFICACIONES TÉCNICAS
+  </text>
+  
+  <text x="100" y="290" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Motor: F200 Standard homologado
+  </text>
+  <text x="100" y="310" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Chasis: Homologado según normativa CIK-FIA
+  </text>
+  <text x="100" y="330" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Neumáticos: Especificación oficial del campeonato
+  </text>
+  <text x="100" y="350" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Peso mínimo: 145 kg (piloto + kart)
+  </text>
+  
+  <text x="80" y="390" fill="#333" font-family="Arial, sans-serif" font-size="16" font-weight="bold">
+    2. CATEGORÍAS Y EDADES
+  </text>
+  
+  <text x="100" y="420" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Edad mínima: 15 años
+  </text>
+  <text x="100" y="440" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Licencia deportiva vigente obligatoria
+  </text>
+  
+  <text x="80" y="480" fill="#333" font-family="Arial, sans-serif" font-size="16" font-weight="bold">
+    3. SEGURIDAD
+  </text>
+  
+  <text x="100" y="510" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Casco homologado CIK-FIA obligatorio
+  </text>
+  <text x="100" y="530" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Traje de karting ignífugo
+  </text>
+  <text x="100" y="550" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    • Guantes y botas de seguridad
+  </text>
+  
+  <!-- Footer -->
+  <rect x="50" y="850" width="700" height="100" fill="#f8f9fa" stroke="#dee2e6" stroke-width="1"/>
+  <text x="400" y="880" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    Esta es una vista previa del reglamento
+  </text>
+  <text x="400" y="900" text-anchor="middle" fill="#666" font-family="Arial, sans-serif" font-size="12">
+    Haz clic en "Abrir PDF" para ver el documento completo
+  </text>
+  <text x="400" y="920" text-anchor="middle" fill="#28a745" font-family="Arial, sans-serif" font-size="10">
+    KartXperience Bolivia 2025
+  </text>
+</svg>

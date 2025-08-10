@@ -4,56 +4,82 @@
 
 /* --- FONT DEFINITIONS --- */
 @font-face {
-  font-family: 'F1 Regular';
-  src: url('/fonts/Formula1-Regular.woff2') format('woff2');
+  font-family: "F1 Regular";
+  src: url("/fonts/Formula1-Regular.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'F1 Bold';
-  src: url('/fonts/Formula1-Bold.woff2') format('woff2');
+  font-family: "F1 Bold";
+  src: url("/fonts/Formula1-Bold.woff2") format("woff2");
   font-weight: bold;
   font-style: normal;
   font-display: swap;
 }
 
 @font-face {
-  font-family: 'F1 Wide';
-  src: url('/fonts/Formula1-Wide.woff2') format('woff2');
+  font-family: "F1 Wide";
+  src: url("/fonts/Formula1-Wide.woff2") format("woff2");
   font-weight: normal;
   font-style: normal;
   font-display: swap;
 }
 
-
 /* --- GENERAL STYLES --- */
 @layer base {
   :root {
-    --background: 0 0% 0%; /* Pure black */
+    /* MODO CLARO */
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
+
+    /* VIBRANT LIME GREEN */
+    --primary: 85 100% 45%;
+    --primary-foreground: 0 0% 98%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 10%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 85 100% 45%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 85%;
+    --input: 0 0% 95%;
+    --ring: 85 100% 45%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* MODO OSCURO */
+    --background: 0 0% 8%; /* Gris oscuro con relieve */
     --foreground: 0 0% 98%;
-    
+
     /* VIBRANT LIME GREEN */
     --primary: 85 100% 50%;
     --primary-foreground: 85 100% 10%;
 
-    --card: 0 0% 4%;
+    --card: 0 0% 12%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
-    --secondary: 0 0% 14.9%;
+    --secondary: 0 0% 18%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
+    --muted: 0 0% 18%;
     --muted-foreground: 0 0% 63.9%;
     --accent: 85 100% 50%;
     --accent-foreground: 85 100% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 85 100% 50%; /* Changed to neon */
-    --input: 0 0% 14.9%;
+    --border: 0 0% 20%;
+    --input: 0 0% 18%;
     --ring: 85 100% 50%;
-    --radius: 0.75rem; /* Slightly larger radius */
   }
 }
 
@@ -63,45 +89,168 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'F1 Regular', sans-serif;
+    font-family: "F1 Regular", sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
   }
-  h1, h2, h3, h4, h5, h6, .font-headline {
-    font-family: 'F1 Bold', sans-serif;
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  .font-headline {
+    font-family: "F1 Bold", sans-serif;
     text-transform: uppercase;
   }
-  button, a {
-    font-family: 'F1 Regular', sans-serif;
+  button,
+  a {
+    font-family: "F1 Regular", sans-serif;
   }
 }
 
-/* --- BACKGROUND PATTERN --- */
+/* --- BACKGROUND PATTERNS --- */
 .pattern-bg {
   background-color: transparent;
-  background-image:
-    radial-gradient(at 20% 80%, hsla(var(--primary), 0.1) 0px, transparent 50%),
+  background-image: radial-gradient(
+      at 20% 80%,
+      hsla(var(--primary), 0.1) 0px,
+      transparent 50%
+    ),
     radial-gradient(at 80% 20%, hsla(var(--primary), 0.08) 0px, transparent 50%),
     radial-gradient(at 50% 50%, hsla(var(--primary), 0.05) 0px, transparent 50%);
 }
 
-/* --- NEON & ANIMATION STYLES V4 (Final Readability) --- */
+/* FONDO CON TEXTURA PARA SECCIONES DE CONTENIDO */
+.content-textured-bg {
+  background-color: #d1d5db; /* Plomo claro para modo claro */
+  background-image:
+    /* Textura diagonal sutil */ repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 6px,
+      rgba(0, 0, 0, 0.12) 6px,
+      rgba(0, 0, 0, 0.12) 12px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 8px,
+      rgba(0, 0, 0, 0.08) 8px,
+      rgba(0, 0, 0, 0.08) 16px
+    ),
+    /* Puntos de relieve */
+      radial-gradient(
+        circle at 25% 25%,
+        rgba(0, 0, 0, 0.15) 2px,
+        transparent 2px
+      ),
+    radial-gradient(circle at 75% 75%, rgba(0, 0, 0, 0.12) 1px, transparent 1px),
+    /* Líneas de relieve */
+      linear-gradient(
+        90deg,
+        transparent 48%,
+        rgba(0, 0, 0, 0.1) 50%,
+        transparent 52%
+      ),
+    linear-gradient(
+      0deg,
+      transparent 48%,
+      rgba(0, 0, 0, 0.08) 50%,
+      transparent 52%
+    );
+
+  background-size: 20px 20px, 20px 20px, 40px 40px, 45px 45px, 200px 200px,
+    200px 200px;
+  background-position: 0 0, 10px 10px, 0 0, 20px 20px, 0 0, 100px 100px;
+}
+
+/* Versión para modo oscuro - plomo oscuro con relieves muy pronunciados */
+html.dark .content-textured-bg {
+  background-color: #2a2a2a; /* Plomo muy oscuro puro */
+  background-image:
+    /* Solo texturas oscuras para mantener el color plomo */ repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 0, 0, 0.15) 10px,
+      rgba(0, 0, 0, 0.15) 20px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      transparent,
+      transparent 10px,
+      rgba(0, 0, 0, 0.1) 10px,
+      rgba(0, 0, 0, 0.1) 20px
+    ),
+    /* Solo puntos oscuros */
+      radial-gradient(
+        circle at 30% 30%,
+        rgba(0, 0, 0, 0.2) 1px,
+        transparent 1px
+      ),
+    radial-gradient(circle at 70% 70%, rgba(0, 0, 0, 0.15) 1px, transparent 1px);
+}
+
+/* FONDO SIMPLE PARA EL HERO */
+.hero-geometric-bg {
+  background: hsl(var(--background));
+  position: relative;
+}
+
+.hero-geometric-pattern {
+  background-color: transparent;
+  background-image: radial-gradient(
+      at 20% 80%,
+      hsla(var(--primary), 0.1) 0px,
+      transparent 50%
+    ),
+    radial-gradient(at 80% 20%, hsla(var(--primary), 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, hsla(var(--primary), 0.05) 0px, transparent 50%);
+}
+
+/* --- NEON & ANIMATION STYLES --- */
 @layer utilities {
-  /* No glow, just color */
+  /* Borde de texto para mejorar contraste sobre fondos claros */
+  .text-stroke-contrast {
+    /* Fallback de contorno mediante sombras */
+    text-shadow:
+      2px 2px 4px rgba(0, 0, 0, 0.85),
+      -2px -2px 4px rgba(0, 0, 0, 0.85),
+      2px -2px 4px rgba(0, 0, 0, 0.85),
+      -2px 2px 4px rgba(0, 0, 0, 0.85),
+      0 0 8px rgba(0, 0, 0, 0.6);
+    /* Contorno real para navegadores WebKit/Blink */
+    -webkit-text-stroke: 1.5px rgba(0, 0, 0, 0.9);
+    paint-order: stroke fill;
+  }
+
+  .text-stroke-contrast-strong {
+    text-shadow:
+      3px 3px 6px rgba(0, 0, 0, 0.92),
+      -3px -3px 6px rgba(0, 0, 0, 0.92),
+      3px -3px 6px rgba(0, 0, 0, 0.92),
+      -3px 3px 6px rgba(0, 0, 0, 0.92),
+      0 0 10px rgba(0, 0, 0, 0.6);
+    -webkit-text-stroke: 2.5px rgba(0, 0, 0, 0.95);
+    paint-order: stroke fill;
+  }
+  /* Texto con efecto neon sutil */
   .neon-text-main {
     color: hsl(var(--primary));
-    text-shadow: none;
+    text-shadow: 0 0 10px hsla(var(--primary), 0.3);
   }
 
   .neon-text-subtle {
     color: hsl(var(--primary));
-    text-shadow: none;
+    text-shadow: 0 0 5px hsla(var(--primary), 0.2);
   }
 
   .neon-pulse-box {
-    box-shadow: 0 0 10px hsl(var(--primary) / 0.5), inset 0 0 5px hsl(var(--primary) / 0.4);
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5),
+      inset 0 0 5px hsl(var(--primary) / 0.4);
     animation: pulse-glow-box 4s infinite ease-in-out;
   }
-  
+
   .svg-border-trace {
     stroke-dasharray: 1000;
     stroke-dashoffset: 1000;
@@ -112,7 +261,7 @@
   }
 
   .interactive-glow-card::before {
-    content: '';
+    content: "";
     position: absolute;
     left: 0;
     top: 0;
@@ -132,13 +281,853 @@
   .interactive-glow-card:hover::before {
     opacity: 1;
   }
+
+  /* Nuevas animaciones para el hero */
+  .animate-fade-in-up {
+    animation: fadeInUp 1s ease-out;
+  }
+
+  .animate-pulse-text {
+    animation: pulseText 3s ease-in-out infinite;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin 8s linear infinite;
+  }
+
+  .animate-bounce-slow {
+    animation: bounceSlow 3s ease-in-out infinite;
+  }
+
+  .animate-slide-right {
+    animation: slideRight 4s ease-in-out infinite;
+  }
+
+  .animate-slide-left {
+    animation: slideLeft 4s ease-in-out infinite;
+  }
 }
 
+/* KEYFRAMES */
 @keyframes pulse-glow-box {
-  0%, 100% {
-    box-shadow: 0 0 10px hsl(var(--primary) / 0.5), inset 0 0 5px hsl(var(--primary) / 0.4);
+  0%,
+  100% {
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5),
+      inset 0 0 5px hsl(var(--primary) / 0.4);
   }
   50% {
-    box-shadow: 0 0 18px hsl(var(--primary) / 0.7), inset 0 0 8px hsl(var(--primary) / 0.6);
+    box-shadow: 0 0 18px hsl(var(--primary) / 0.7),
+      inset 0 0 8px hsl(var(--primary) / 0.6);
   }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseText {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.02);
+  }
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+    opacity: 0.7;
+  }
+  50% {
+    transform: translateY(-20px) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceSlow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slideRight {
+  0% {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+}
+
+@keyframes slideLeft {
+  0% {
+    transform: translateX(100px);
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-100px);
+    opacity: 0;
+  }
+}
+
+/* --- FLIP UNIT ANIMATIONS --- */
+@layer utilities {
+  .perspective {
+    perspective: 1000px;
+  }
+
+  .transform-style-3d {
+    transform-style: preserve-3d;
+  }
+
+  .backface-hidden {
+    backface-visibility: hidden;
+  }
+
+  .animate-value-change {
+    animation: valueChange 0.6s ease-in-out;
+  }
+
+  .animate-pulse-glow {
+    animation: pulseGlow 2s ease-in-out infinite;
+  }
+}
+
+@keyframes valueChange {
+  0% {
+    transform: rotateX(0deg);
+  }
+  50% {
+    transform: rotateX(-90deg);
+  }
+  100% {
+    transform: rotateX(0deg);
+  }
+}
+
+@keyframes pulseGlow {
+  0%,
+  100% {
+    box-shadow: inset 0 0 20px hsla(var(--primary), 0.1);
+  }
+  50% {
+    box-shadow: inset 0 0 30px hsla(var(--primary), 0.2);
+  }
+}
+
+/* --- RESPONSIVE IMPROVEMENTS --- */
+@media (max-width: 640px) {
+  .content-textured-bg {
+    background-size: 6px 6px, 6px 6px, 15px 15px, 15px 15px, 80px 80px,
+      80px 80px, 100% 100%;
+  }
+}
+/* --- OPTIMIZACIONES PARA MÓVILES Y RENDIMIENTO --- */
+
+/* Reducir animaciones en móviles */
+@media (max-width: 768px) {
+  /* Animaciones más lentas y suaves en móviles */
+  .animate-float {
+    animation: float 8s ease-in-out infinite;
+  }
+
+  .animate-spin-slow {
+    animation: spin 12s linear infinite;
+  }
+
+  .animate-bounce-slow {
+    animation: bounceSlow 4s ease-in-out infinite;
+  }
+
+  .animate-slide-right,
+  .animate-slide-left {
+    animation: none; /* Desactivar en móviles para mejor rendimiento */
+  }
+
+  /* Texturas más simples en móviles */
+  .content-textured-bg {
+    background-size: 32px 32px, 32px 32px, 60px 60px, 70px 70px, 300px 300px,
+      300px 300px !important;
+  }
+
+  html.dark .content-textured-bg {
+    background-size: 32px 32px, 32px 32px, 60px 60px, 70px 70px !important;
+  }
+}
+
+/* Respetar preferencias de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Mantener solo animaciones esenciales */
+  .animate-fade-in-up {
+    animation: none;
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Optimizaciones para dispositivos de bajo rendimiento */
+@media (max-width: 480px) {
+  /* Eliminar sombras complejas en móviles pequeños */
+  .neon-pulse-box {
+    box-shadow: none;
+    animation: none;
+  }
+
+  /* Simplificar gradientes */
+  .hero-geometric-pattern {
+    background-image: radial-gradient(
+      at 50% 50%,
+      hsla(var(--primary), 0.05) 0px,
+      transparent 50%
+    );
+  }
+
+  /* Reducir complejidad de texturas */
+  .content-textured-bg {
+    background-image: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 16px,
+        rgba(0, 0, 0, 0.05) 16px,
+        rgba(0, 0, 0, 0.05) 32px
+      ),
+      radial-gradient(
+        circle at 50% 50%,
+        rgba(0, 0, 0, 0.08) 1px,
+        transparent 1px
+      ) !important;
+    background-size: 32px 32px, 80px 80px !important;
+  }
+}
+
+/* Optimización para pantallas de alta densidad */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  /* Usar transform en lugar de cambios de posición para mejor rendimiento */
+  .animate-float {
+    will-change: transform;
+  }
+
+  .animate-bounce-slow {
+    will-change: transform;
+  }
+}
+
+/* Mejoras de rendimiento generales */
+.hero-geometric-pattern,
+.content-textured-bg {
+  /* Promover a capa de composición para mejor rendimiento */
+  will-change: auto;
+  transform: translateZ(0);
+}
+
+/* Optimización de fuentes para carga más rápida */
+@font-face {
+  font-family: "F1 Regular";
+  src: url("/fonts/Formula1-Regular.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  /* Preload hint para navegadores compatibles */
+  font-loading: swap;
+}
+
+@font-face {
+  font-family: "F1 Bold";
+  src: url("/fonts/Formula1-Bold.woff2") format("woff2");
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+  font-loading: swap;
+}
+
+@font-face {
+  font-family: "F1 Wide";
+  src: url("/fonts/Formula1-Wide.woff2") format("woff2");
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+  font-loading: swap;
+}
+/* --- OPTIMIZACIONES ESPECÍFICAS PARA MÓVILES MUY PEQUEÑOS --- */
+
+/* Para dispositivos de 320px - 374px (iPhone SE, etc.) */
+@media (max-width: 374px) {
+  .countdown-container {
+    padding: 0 0.5rem;
+    max-width: 100%;
+    overflow: hidden;
+  }
+  
+  .flip-unit-mobile {
+    min-width: 35px !important;
+    width: 35px !important;
+    height: 42px !important;
+    font-size: 1rem !important;
+  }
+  
+  .flip-unit-label-mobile {
+    font-size: 8px !important;
+    margin-top: 2px !important;
+    letter-spacing: 0.5px !important;
+  }
+  
+  .hero-title-mobile {
+    font-size: 1rem !important;
+    line-height: 1.2 !important;
+    padding: 0 0.5rem !important;
+  }
+  
+  .hero-subtitle-mobile {
+    font-size: 0.875rem !important;
+    line-height: 1.3 !important;
+    padding: 0 0.5rem !important;
+  }
+}
+
+/* Para dispositivos de 375px - 479px (iPhone 6/7/8, etc.) */
+@media (min-width: 375px) and (max-width: 479px) {
+  .countdown-container {
+    padding: 0 0.75rem;
+    max-width: 100%;
+  }
+  
+  .flip-unit-mobile {
+    min-width: 38px !important;
+    width: 38px !important;
+    height: 46px !important;
+    font-size: 1.125rem !important;
+  }
+  
+  .flip-unit-label-mobile {
+    font-size: 9px !important;
+    margin-top: 3px !important;
+  }
+}
+
+/* Para dispositivos de 480px - 639px (móviles grandes) */
+@media (min-width: 480px) and (max-width: 639px) {
+  .countdown-container {
+    padding: 0 1rem;
+  }
+  
+  .flip-unit-mobile {
+    min-width: 42px !important;
+    width: 42px !important;
+    height: 50px !important;
+    font-size: 1.25rem !important;
+  }
+  
+  .flip-unit-label-mobile {
+    font-size: 10px !important;
+    margin-top: 4px !important;
+  }
+}
+
+/* Optimizaciones generales para móviles */
+@media (max-width: 640px) {
+  /* Reducir espaciado entre elementos del contador */
+  .countdown-gap-mobile {
+    gap: 0.25rem !important;
+  }
+  
+  /* Asegurar que el contador no se desborde */
+  .countdown-wrapper {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  /* Mejorar legibilidad en pantallas pequeñas */
+  .mobile-text-contrast {
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+  }
+  
+  /* Reducir animaciones en móviles para mejor rendimiento */
+  .reduce-motion-mobile {
+    animation-duration: 0.5s !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
+/* Landscape en móviles */
+@media (max-width: 896px) and (orientation: landscape) {
+  .countdown-landscape {
+    transform: scale(0.8);
+    margin: 0.5rem 0;
+  }
+  
+  .hero-content-landscape {
+    padding: 1rem 0;
+    min-height: auto;
+  }
+}
+
+/* Ajustes para pantallas muy anchas pero bajas (landscape móviles) */
+@media (max-height: 500px) and (orientation: landscape) {
+  .countdown-landscape {
+    transform: scale(0.7);
+    margin: 0.25rem 0;
+  }
+  
+  .hero-spacing-landscape {
+    margin-bottom: 0.5rem !important;
+  }
+}/* --- OPT
+IMIZACIONES ADICIONALES PARA DISPOSITIVOS ESPECÍFICOS --- */
+
+/* Samsung Galaxy S8+ (360x740) y similares */
+@media (min-width: 360px) and (max-width: 360px) {
+  .countdown-wrapper {
+    padding: 0 0.5rem;
+    max-width: 340px;
+    margin: 0 auto;
+  }
+}
+
+/* iPhone 12 mini (375x812) */
+@media (min-width: 375px) and (max-width: 375px) {
+  .countdown-wrapper {
+    padding: 0 0.75rem;
+    max-width: 355px;
+    margin: 0 auto;
+  }
+}
+
+/* Pixel 2 (411x731) y similares */
+@media (min-width: 411px) and (max-width: 414px) {
+  .countdown-wrapper {
+    padding: 0 1rem;
+    max-width: 390px;
+    margin: 0 auto;
+  }
+}
+
+/* Asegurar que nunca se desborde horizontalmente */
+.countdown-container {
+  max-width: 100vw;
+  box-sizing: border-box;
+}
+
+/* Fallback para dispositivos muy pequeños */
+@media (max-width: 280px) {
+  .countdown-wrapper {
+    transform: scale(0.8) !important;
+    transform-origin: center !important;
+  }
+  
+  .flip-unit-emergency {
+    width: 28px !important;
+    height: 34px !important;
+    font-size: 0.75rem !important;
+  }
+  
+  .flip-unit-label-emergency {
+    font-size: 7px !important;
+  }
+}
+
+/* Optimización para pantallas muy anchas pero bajas */
+@media (min-width: 568px) and (max-height: 320px) {
+  .countdown-landscape {
+    transform: scale(0.6) !important;
+  }
+}
+
+/* Mejoras de performance para móviles */
+@media (max-width: 768px) {
+  .countdown-wrapper {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+  
+  .countdown-container > * {
+    will-change: transform;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+  }
+}
+
+/* Asegurar visibilidad en todos los temas */
+.countdown-wrapper {
+  position: relative;
+  z-index: 10;
+}
+
+/* Prevenir overflow en contenedores padre */
+.hero-content-mobile {
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
+}/* -
+-- FORZAR CONTADOR EN UNA SOLA LÍNEA --- */
+
+/* Asegurar que el contador nunca se rompa en múltiples líneas */
+.countdown-single-line {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  white-space: nowrap !important;
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+/* Optimizaciones específicas para Samsung Galaxy S8+ (360px) */
+@media (max-width: 360px) {
+  .countdown-single-line {
+    gap: 0.125rem !important; /* 2px gap */
+    padding: 0 0.25rem !important;
+  }
+  
+  .flip-unit-compact {
+    min-width: 30px !important;
+    width: 30px !important;
+    height: 38px !important;
+  }
+  
+  .flip-unit-text-compact {
+    font-size: 0.75rem !important; /* 12px */
+    line-height: 1 !important;
+  }
+  
+  .flip-unit-label-compact {
+    font-size: 7px !important;
+    margin-top: 1px !important;
+    letter-spacing: 0.5px !important;
+  }
+}
+
+/* Para dispositivos de 361px - 375px */
+@media (min-width: 361px) and (max-width: 375px) {
+  .countdown-single-line {
+    gap: 0.25rem !important; /* 4px gap */
+    padding: 0 0.5rem !important;
+  }
+}
+
+/* Prevenir scroll horizontal en el contador */
+.countdown-container-wrapper {
+  overflow-x: hidden !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+/* Asegurar que los FlipUnits no crezcan */
+.flip-unit-fixed {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  flex-basis: auto !important;
+}/* --- OPTIM
+IZACIONES PARA TÍTULOS DE CARRERAS --- */
+
+/* Asegurar que los títulos de carreras no se salgan */
+.race-title-mobile {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  max-width: 100%;
+  line-height: 1.2;
+}
+
+/* Para dispositivos muy pequeños */
+@media (max-width: 360px) {
+  .race-title-mobile {
+    font-size: 0.875rem !important; /* 14px */
+    line-height: 1.1 !important;
+    padding: 0 1rem !important;
+    text-align: center !important;
+  }
+}
+
+/* Para dispositivos pequeños */
+@media (min-width: 361px) and (max-width: 480px) {
+  .race-title-mobile {
+    font-size: 1rem !important; /* 16px */
+    line-height: 1.2 !important;
+    padding: 0 1.5rem !important;
+  }
+}
+
+/* Optimizar el contador horizontal */
+.countdown-horizontal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: nowrap;
+  gap: 0.25rem;
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.countdown-horizontal::-webkit-scrollbar {
+  display: none;
+}
+
+/* Separadores del contador más pequeños en móviles */
+@media (max-width: 480px) {
+  .countdown-separator {
+    font-size: 1rem !important;
+    margin: 0 0.125rem !important;
+  }
+}
+
+/* Asegurar que el contador no se rompa */
+.countdown-unit-wrapper {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Mejorar legibilidad en móviles */
+@media (max-width: 768px) {
+  .mobile-text-shadow {
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  
+  .mobile-bg-contrast {
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(4px);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+  }
+}/* --- 
+FORZAR CONTADOR HORIZONTAL DEFINITIVAMENTE --- */
+
+/* Forzar layout horizontal en el contador */
+.countdown-force-horizontal {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  box-sizing: border-box !important;
+}
+
+/* Asegurar que los FlipUnits no se apilen verticalmente */
+.flip-unit-horizontal {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  min-width: fit-content !important;
+}
+
+/* Separadores horizontales */
+.countdown-separator-horizontal {
+  flex-shrink: 0 !important;
+  flex-grow: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  margin: 0 0.125rem !important;
+}
+
+/* Prevenir cualquier comportamiento vertical */
+.countdown-container-force {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Ocultar scrollbar pero mantener funcionalidad */
+.countdown-force-horizontal::-webkit-scrollbar {
+  display: none;
+}
+
+.countdown-force-horizontal {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Media queries específicas para asegurar horizontal */
+@media (max-width: 480px) {
+  .countdown-force-horizontal {
+    gap: 0.125rem !important;
+    padding: 0 0.25rem !important;
+  }
+  
+  .countdown-separator-horizontal {
+    font-size: 0.875rem !important;
+    margin: 0 0.0625rem !important;
+  }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  .countdown-force-horizontal {
+    gap: 0.25rem !important;
+    padding: 0 0.5rem !important;
+  }
+}
+
+/* --- ESTILOS PARA LIGHTBOX DE GALERÍA --- */
+
+/* Estilos específicos para yet-another-react-lightbox */
+.yarl__container {
+  background-color: rgba(0, 0, 0, 0.95) !important;
+}
+
+.yarl__slide {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 20px !important;
+}
+
+.yarl__slide img {
+  max-width: 100% !important;
+  max-height: 100% !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block !important;
+  margin: auto !important;
+}
+
+/* Asegurar que las imágenes no se recorten en móviles */
+@media (max-width: 768px) {
+  .yarl__slide {
+    padding: 10px !important;
+  }
+  
+  .yarl__slide img {
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - 20px) !important;
+  }
+}
+
+/* Botones de navegación del lightbox */
+.yarl__button {
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.yarl__button:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Botón de cerrar */
+.yarl__button_close {
+  background: rgba(0, 0, 0, 0.5) !important;
+  border: none !important;
+}
+
+.yarl__button_close:hover {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+
+/* Estilos legacy para modal de galería (por si acaso) */
+[data-radix-dialog-content] {
+  max-width: 95vw !important;
+  max-height: 95vh !important;
+  overflow: hidden !important;
+}
+
+.gallery-modal-image {
+  max-width: 100% !important;
+  max-height: 85vh !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+}
+
+.gallery-modal-container {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 1rem !important;
+  max-height: 90vh !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 768px) {
+  [data-radix-dialog-content] {
+    max-width: 98vw !important;
+    max-height: 98vh !important;
+    margin: 0 !important;
+  }
+  
+  .gallery-modal-image {
+    max-height: 80vh !important;
+  }
+  
+  .gallery-modal-container {
+    padding: 0.5rem !important;
+    max-height: 85vh !important;
+  }
+}
+
+[data-radix-dialog-overlay] {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+[data-radix-dialog-close] {
+  position: absolute !important;
+  top: 1rem !important;
+  right: 1rem !important;
+  z-index: 50 !important;
+  background: rgba(0, 0, 0, 0.5) !important;
+  color: white !important;
+  border-radius: 50% !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+[data-radix-dialog-close]:hover {
+  background: rgba(0, 0, 0, 0.7) !important;
 }

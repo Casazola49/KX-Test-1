@@ -1,9 +1,17 @@
 
 import { createClient } from '@supabase/supabase-js';
+import type { Metadata } from 'next';
 import PilotsPageClient from '@/components/client/PilotsPageClient';
 import { groupPodiumsByCategory, FullEvent } from '@/lib/utils';
 import { unstable_noStore as noStore } from 'next/cache';
 import { Pilot, Category } from '@/lib/types';
+
+// Metadata específica para la página de pilotos
+export const metadata: Metadata = {
+  title: 'Pilotos y Equipos | Karting Bolivia',
+  description: 'Conoce a los mejores pilotos de karting de Bolivia y sus equipos. Estadísticas, clasificaciones y perfiles completos.',
+  keywords: 'pilotos karting, equipos karting, clasificaciones, estadísticas',
+};
 
 export const revalidate = 0;
 
@@ -22,7 +30,11 @@ async function getPilotsAndEvents() {
   if (categoriesError) throw new Error(`DATABASE ERROR (Categories): ${categoriesError.message}`);
   if (!categoriesData) throw new Error('Error de Datos: No se pudieron obtener las categorías.');
   
+  // Debug logging
+  console.log('Categories loaded:', categoriesData);
+  
   const categoriesMap = new Map(categoriesData.map(c => [c.id, c.name]));
+  const categoryNamesSet = new Set(categoriesData.map(c => c.name));
 
   // CORRECTED: Use the 'category' column, which is the correct name in the database.
   const { data: pilotsData, error: pilotsError } = await supabaseAdmin
@@ -33,9 +45,30 @@ async function getPilotsAndEvents() {
   if (pilotsError) throw new Error(`DATABASE ERROR (Pilots): ${pilotsError.message}`);
   if (!pilotsData) throw new Error('Error de Datos: No se pudieron obtener los pilotos.');
 
+  // Debug logging
+  console.log('Pilots data sample:', pilotsData.slice(0, 3).map(p => ({ 
+    name: `${p.firstName} ${p.lastName}`, 
+    category: p.category 
+  })));
+
   const formattedPilots = pilotsData.map(pilot => {
-    // The 'pilot.category' field now correctly holds the category UUID from the database.
-    const categoryName = pilot.category ? categoriesMap.get(pilot.category) : undefined;
+    // La columna 'category' puede venir como UUID (FK) o como nombre según datos antiguos.
+    // 1) Si es UUID y existe en el mapa -> obtenemos el nombre.
+    // 2) Si ya es un nombre válido -> lo usamos tal cual.
+    // 3) En cualquier otro caso -> 'Sin Categoría'.
+    let categoryName: string | undefined;
+    if (pilot.category) {
+      categoryName = categoriesMap.get(pilot.category);
+      if (!categoryName && categoryNamesSet.has(pilot.category)) {
+        categoryName = pilot.category;
+      }
+    }
+    
+    // Debug logging to help identify the issue
+    if (pilot.category && !categoryName) {
+      console.log(`Warning: Category UUID "${pilot.category}" not found in categories map for pilot ${pilot.firstName} ${pilot.lastName}`);
+    }
+    
     return {
       ...pilot,
       // We overwrite the 'category' property (which was the UUID) with the category's actual name.
@@ -61,12 +94,14 @@ async function getPilotsAndEvents() {
   
   const currentDate = new Date().toISOString();
   const pastEvents = allEvents.filter(event => new Date(event.event_date) <= new Date(currentDate));
-
-  const initialGroupedPodiums = groupPodiumsByCategory(pastEvents[0]?.podiums);
+  // Priorizar eventos que ya tienen podios para la vista de Clasificación
+  const eventsWithPodiums = pastEvents.filter(e => Array.isArray(e.podiums) && e.podiums.length > 0);
+  const initialGroupedPodiums = groupPodiumsByCategory(eventsWithPodiums[0]?.podiums);
 
   return {
     pilots: (formattedPilots as Pilot[]) || [],
-    events: pastEvents,
+    // Enviamos primero los eventos con podios; si no hay, enviamos todos los pasados
+    events: (eventsWithPodiums.length > 0 ? eventsWithPodiums : pastEvents),
     initialGroupedPodiums,
     categories: categoriesData.map(c => c.name).sort() || [],
   };

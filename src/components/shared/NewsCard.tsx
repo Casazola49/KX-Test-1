@@ -14,7 +14,7 @@ interface NewsCardProps {
 }
 
 const NewsCard: React.FC<NewsCardProps> = ({ news, isLarge = false, className }) => {
-  const formattedDate = new Date(news.date).toLocaleDateString('es-ES', {
+  const formattedDate = new Date((news as any).date || (news as any).created_at).toLocaleDateString('es-ES', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
@@ -26,11 +26,12 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, isLarge = false, className })
         <Link href={`/noticias/${news.slug}`} className="block">
           <div className="relative aspect-[16/9] w-full">
             <Image
-              src={news.imageUrl}
+              src={(news as any).image_url || (news as any).imageUrl}
               alt={news.title}
-              layout="fill"
-              objectFit="cover"
-              className="group-hover/mainnews:scale-105 transition-transform duration-500 ease-in-out"
+              fill
+              className="object-cover group-hover/mainnews:scale-105 transition-transform duration-500 ease-in-out"
+              priority={true}
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 80vw, 60vw"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
           </div>
@@ -39,7 +40,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, isLarge = false, className })
           <CardTitle className="text-xl md:text-2xl lg:text-3xl font-bold text-foreground group-hover/mainnews:text-primary transition-colors duration-300 line-clamp-2 md:line-clamp-3 mb-2">
              <Link href={`/noticias/${news.slug}`}>{news.title}</Link>
           </CardTitle>
-          <p className="text-muted-foreground text-sm mb-4 line-clamp-2 md:line-clamp-3">{news.excerpt}</p>
+          <p className="text-muted-foreground text-sm mb-4 line-clamp-2 md:line-clamp-3">{(news as any).excerpt || ''}</p>
           <div className="flex items-center text-xs text-muted-foreground mb-4">
             <CalendarDays size={14} className="mr-1.5" />
             {formattedDate}
@@ -58,18 +59,18 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, isLarge = false, className })
     <Card className={cn("group/news w-full overflow-hidden shadow-lg hover:shadow-primary/20 transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1", className)}>
       <Link href={`/noticias/${news.slug}`} className="block">
         <div className="relative aspect-video w-full">
-          <Image
-            src={news.imageUrl}
+           <Image
+            src={(news as any).image_url || (news as any).imageUrl}
             alt={news.title}
-            layout="fill"
-            objectFit="cover"
-            className="group-hover/news:scale-105 transition-transform duration-300 ease-in-out"
+            fill
+            className="object-cover group-hover/news:scale-105 transition-transform duration-300 ease-in-out"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
           />
            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover/news:opacity-100 transition-opacity duration-300 ease-in-out"></div>
         </div>
       </Link>
       <CardHeader className="p-4 flex-grow">
-        <CardTitle className="text-base md:text-lg font-semibold line-clamp-2 group-hover/news:text-primary transition-colors duration-300">
+         <CardTitle className="text-base md:text-lg font-semibold line-clamp-2 group-hover/news:text-primary transition-colors duration-300">
           <Link href={`/noticias/${news.slug}`}>{news.title}</Link>
         </CardTitle>
       </CardHeader>
@@ -77,7 +78,7 @@ const NewsCard: React.FC<NewsCardProps> = ({ news, isLarge = false, className })
          <p className="text-muted-foreground text-xs mb-2 line-clamp-2">{news.excerpt}</p>
       </CardContent>
       <CardFooter className="p-4 pt-0 flex justify-between items-center">
-        <div className="flex items-center text-xs text-muted-foreground">
+         <div className="flex items-center text-xs text-muted-foreground">
           <CalendarDays size={12} className="mr-1" />
           {formattedDate}
         </div>

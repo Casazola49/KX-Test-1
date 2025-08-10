@@ -4,25 +4,31 @@ import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
 import { supabaseAdmin } from '@/lib/supabase-admin';
 
-// Esquema actualizado para incluir 'slug' y hacerlo obligatorio
+// Esquema actualizado: sin 'slug' (la tabla no lo tiene) y con 'type' por defecto 'image'
 const GalleryActionSchema = z.object({
   id: z.string().optional(),
   title: z.string().min(1, "El título no puede estar vacío."),
-  slug: z.string().min(1, "El slug no puede estar vacío."),
   src: z.string().url('La URL de la imagen no es válida.'),
   description: z.string().optional(),
   eventId: z.string().uuid().optional().nullable(),
   tags: z.array(z.string()).optional(),
+  type: z.enum(['image', 'video']).default('image').optional(),
+  alt: z.string().optional(),
 });
 
 export async function saveGalleryItem(data: any) {
   try {
     const validatedData = GalleryActionSchema.parse(data);
     const { id, ...itemData } = validatedData;
+    const itemToSave = {
+      ...itemData,
+      type: itemData.type ?? 'image',
+      alt: (itemData.alt && itemData.alt.trim().length > 0) ? itemData.alt : itemData.title,
+    } as any;
 
     const { error } = await supabaseAdmin
       .from('gallery')
-      .upsert(id ? { ...itemData, id } : itemData);
+      .upsert(id ? { ...itemToSave, id } : itemToSave);
 
     if (error) {
         console.error("Supabase Error:", error.message);

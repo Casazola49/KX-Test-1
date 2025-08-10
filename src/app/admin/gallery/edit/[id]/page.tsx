@@ -6,6 +6,7 @@ import Section from '@/components/shared/Section';
 import type { GalleryItem } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import { getRaceEvents } from '@/app/admin/standings/actions';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,6 +33,7 @@ async function getGalleryItem(id: string): Promise<GalleryItem | null> {
 
 export default async function EditGalleryItemPage({ params }: { params: { id: string } }) {
   const item = await getGalleryItem(params.id);
+  const events = await getRaceEvents();
 
   if (!item) {
     notFound();
@@ -46,7 +48,7 @@ export default async function EditGalleryItemPage({ params }: { params: { id: st
             <CardTitle>Editando: {item.title || `Elemento ${item.id}`}</CardTitle>
           </CardHeader>
           <CardContent>
-            <GalleryItemForm item={item} />
+            <GalleryItemForm item={item} events={events} />
           </CardContent>
         </Card>
       </Section>

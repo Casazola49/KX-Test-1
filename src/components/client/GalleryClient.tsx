@@ -34,8 +34,8 @@ export default function GalleryClient({ items, tags }: { items: GalleryItem[], t
   }, [items, selectedTag]);
 
   const lightboxSlides = filteredItems.map(item => ({
-      // CORRECCIÓN: Usar item.src
-      src: getTransformedUrl(item.src, 1200, 800),
+      // Usar la URL original sin transformar para mejor calidad
+      src: item.src,
       title: item.title,
   }));
 
@@ -95,6 +95,52 @@ export default function GalleryClient({ items, tags }: { items: GalleryItem[], t
         index={lightboxIndex}
         close={() => setLightboxIndex(-1)}
         slides={lightboxSlides}
+        carousel={{
+          finite: true,
+        }}
+        controller={{
+          closeOnBackdropClick: true,
+        }}
+        styles={{
+          container: {
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+          },
+          slide: {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          },
+        }}
+        render={{
+          slide: ({ slide }) => (
+            <div 
+              style={{
+                width: '80vw',
+                height: '80vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: 'rgba(40, 40, 40, 0.9)',
+                borderRadius: '8px',
+                padding: '20px',
+              }}
+            >
+              <img
+                src={slide.src}
+                alt={slide.title || 'Imagen de galería'}
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '100%',
+                  objectFit: 'contain',
+                  width: 'auto',
+                  height: 'auto',
+                  borderRadius: '4px'
+                }}
+              />
+            </div>
+          ),
+        }}
       />
     </div>
   );

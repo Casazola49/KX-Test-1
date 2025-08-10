@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFieldArray, Controller } from "react-hook-form";
@@ -10,6 +10,7 @@ import { createPilot, updatePilot } from '@/app/admin/pilots/actions';
 import type { Pilot } from "@/lib/types";
 
 import { createClient } from '@supabase/supabase-js';
+import type { Category } from '@/lib/types';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -85,6 +86,27 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
   const [kartModelFile, setKartModelFile] = useState<File | null>(null);
   const [kartModelName, setKartModelName] = useState<string | null>(pilot?.model_3d_url ? pilot.model_3d_url.split('/').pop()! : null);
 
+  // Lista por defecto en caso de que aún no exista la tabla o falle la carga
+  const DEFAULT_CATEGORY_OPTIONS = useMemo(
+    () => [
+      '100cc JUNIOR',
+      '125cc PROFESIONAL',
+      'BABY KART',
+      'F200 STANDARD',
+      'F200 SUPER',
+      'F200 MASTER',
+      'INFANTIL 65',
+      'MASTER X30',
+      'MINI 60',
+      'PROFESIONAL T35',
+      'VORTEX 100',
+      'F390',
+    ],
+    []
+  );
+
+  const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORY_OPTIONS);
+
   const isEditing = !!pilot;
 
   const form = useForm<PilotFormValues>({
@@ -109,6 +131,33 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
       performanceHistory: pilot?.performanceHistory?.map(ph => ({ race: ph.race, lapTime: ph.lapTime })) || [],
     },
   });
+
+  // Cargar categorías desde la BD para poblar el selector
+  useEffect(() => {
+    const loadCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('name')
+          .order('name', { ascending: true });
+        if (error) throw error;
+        const names = (data as Category[]).map(c => c.name).filter(Boolean);
+        // Asegurar que la categoría del piloto en edición esté presente
+        const withEditing = pilot?.category && !names.includes(pilot.category)
+          ? [...names, pilot.category]
+          : names;
+        setCategoryOptions(withEditing.length > 0 ? withEditing : DEFAULT_CATEGORY_OPTIONS);
+      } catch {
+        // Si falla, mantenemos las opciones por defecto
+        setCategoryOptions(prev => {
+          if (pilot?.category && !prev.includes(pilot.category)) return [...prev, pilot.category];
+          return prev;
+        });
+      }
+    };
+    loadCategories();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const { fields: achievementFields, append: appendAchievement, remove: removeAchievement } = useFieldArray({
     control: form.control,
@@ -289,7 +338,28 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
                 <section>
                     <SectionTitle icon={Car} title="Datos de Competición" />
                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Categoría Actual</FormLabel><FormControl><Input placeholder="Ej: Profesional" {...field} disabled={isSubmitting}/></FormControl><FormMessage /></FormItem>)} />
+                        <FormField 
+                          control={form.control} 
+                          name="category" 
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Categoría Actual</FormLabel>
+                              <FormControl>
+                                <select 
+                                  {...field} 
+                                  disabled={isSubmitting}
+                                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                  <option value="">Seleccionar categoría...</option>
+                                  {categoryOptions.map(name => (
+                                    <option key={name} value={name}>{name}</option>
+                                  ))}
+                                </select>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )} 
+                        />
                         <FormField control={form.control} name="number" render={({ field }) => (<FormItem><FormLabel>Número de Auto (Kart)</FormLabel><FormControl><Input type="number" placeholder="Ej: 77" {...field} disabled={isSubmitting} /></FormControl><FormMessage /></FormItem>)} />
                         <FormField
                             control={form.control}

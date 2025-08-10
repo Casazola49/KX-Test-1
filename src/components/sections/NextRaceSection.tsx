@@ -1,6 +1,6 @@
 
 import CountdownTimer from '@/components/shared/CountdownTimer';
-import TrackInfoCard from '@/components/shared/TrackInfoCard';
+import EventInfoCard from '@/components/shared/EventInfoCard';
 import { Event } from '@/lib/types';
 import Section from '@/components/shared/Section';
 
@@ -13,18 +13,10 @@ export default function NextRaceSection({ event }: NextRaceSectionProps) {
     <Section title="Próximo Evento">
       {event ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-          {/* Mostramos la tarjeta de la pista solo si la información está disponible */}
-          {event.track ? (
-            <TrackInfoCard track={event.track} />
-          ) : (
-            // Mensaje alternativo si no hay datos de la pista
-            <div className="flex items-center justify-center h-full bg-background/20 rounded-lg p-8">
-              <p className="text-muted-foreground text-center">Información de la pista no disponible.</p>
-            </div>
-          )}
+          {/* Mostramos la tarjeta del evento con toda su información */}
+          <EventInfoCard event={event} />
           <div className="text-center">
-            <h3 className="text-2xl font-bold mb-4">{event.name}</h3>
-            <p className="text-lg text-muted-foreground mb-4">{event.trackName}</p>
+            <h3 className="text-3xl font-bold mb-6">{event.name}</h3>
             <CountdownTimer date={event.date} />
           </div>
         </div>

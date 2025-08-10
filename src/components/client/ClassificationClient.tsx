@@ -122,12 +122,18 @@ function CategoryClassification({ categoryName, podiums }: CategoryClassificatio
 }
 
 export default function ClassificationClient({ events, initialGroupedPodiums }: ClassificationClientProps) {
-  const [selectedEventId, setSelectedEventId] = useState<string>(events[0]?.id || '');
+  // Elegimos por defecto el primer evento que tenga podios
+  const defaultEventId = events.find(e => Array.isArray(e.podiums) && e.podiums.length > 0)?.id || events[0]?.id || '';
+  const [selectedEventId, setSelectedEventId] = useState<string>(defaultEventId);
 
   const groupedPodiums = useMemo(() => {
     const selectedEvent = events.find(e => e.id === selectedEventId);
-    return selectedEvent ? groupPodiumsByCategory(selectedEvent.podiums) : {};
-  }, [selectedEventId, events]);
+    // Si no hay seleccionado (o no tiene podios), usar initialGroupedPodiums como fallback
+    if (!selectedEvent || !selectedEvent.podiums || selectedEvent.podiums.length === 0) {
+      return initialGroupedPodiums || {};
+    }
+    return groupPodiumsByCategory(selectedEvent.podiums);
+  }, [selectedEventId, events, initialGroupedPodiums]);
   
   const categories = Object.keys(groupedPodiums);
 

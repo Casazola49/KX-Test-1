@@ -156,7 +156,8 @@ const Header: React.FC = () => {
           >
             {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
-          <div className="hidden md:block">
+          {/* Ocultamos el botón de Admin para usuarios públicos. El componente se mantiene para acceso directo vía URL. */}
+          <div className="hidden">
             <AdminButton />
           </div>
         </div>

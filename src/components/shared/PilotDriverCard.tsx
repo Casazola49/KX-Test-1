@@ -1,3 +1,4 @@
+"use client";
 
 import type { Pilot } from '@/lib/types';
 import Image from 'next/image';
@@ -40,12 +41,12 @@ const PilotDriverCard: React.FC<PilotDriverCardProps> = ({ pilot }) => {
         
         <div className="relative flex items-center justify-between p-4 min-h-[180px]">
           <div className="relative z-10 text-white w-1/2 pl-4">
-            <p className="font-f1 text-xl">{pilot.firstName}</p>
-            <p className="font-f1-bold text-3xl -mt-1">{pilot.lastName}</p>
-            <p className="font-sans text-sm text-gray-400 mt-1">{pilot.teamName}</p>
+            <p className="font-f1 text-xl text-white drop-shadow-lg text-stroke-contrast" style={{ WebkitTextStroke: '1.5px rgba(0,0,0,0.9)' }}>{pilot.firstName}</p>
+            <p className="font-f1-bold text-3xl -mt-1 text-white drop-shadow-lg text-stroke-contrast" style={{ WebkitTextStroke: '1.5px rgba(0,0,0,0.9)' }}>{pilot.lastName}</p>
+            <p className="font-sans text-sm text-gray-200 mt-1 drop-shadow-md text-stroke-contrast" style={{ WebkitTextStroke: '1px rgba(0,0,0,0.9)' }}>{pilot.teamName}</p>
             
             <div className="flex items-end mt-4">
-              <p className="font-f1-bold text-7xl text-white leading-none">{pilot.number}</p>
+              <p className="font-f1-bold text-7xl text-white leading-none drop-shadow-xl text-stroke-contrast-strong" style={{ WebkitTextStroke: '2.5px rgba(0,0,0,0.95)' }}>{pilot.number}</p>
               {pilot.nationality && (
                 <Image 
                   src={`https://flagcdn.com/w40/${pilot.nationality.toLowerCase()}.png`}

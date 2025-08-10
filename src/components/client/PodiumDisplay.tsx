@@ -21,9 +21,10 @@ const positionSuffix = (pos: number) => {
 
 const PodiumCard = ({ result, position }: { result: FullPodium['results'][0], position: number }) => {
     const pilot = result.pilot;
-    if (!pilot) return null; // Safety check
+    // Mostrar tarjeta incluso si es invitado (sin piloto registrado)
+    if (!pilot && !result.guest_name) return null; // Safety check
     
-    const teamColor = pilot.teamColor || '#333333';
+    const teamColor = pilot?.teamColor || '#333333';
     
     const backgroundStyle = {
         background: `radial-gradient(circle at 50% 0%, ${teamColor} 0%, #111 100%)`
@@ -42,20 +43,26 @@ const PodiumCard = ({ result, position }: { result: FullPodium['results'][0], po
                     {position}<span className="text-3xl align-top">{positionSuffix(position)}</span>
                 </div>
                 
-                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white/20 mt-8">
-                    <Image
-                        src={pilot.imageUrl || '/pilotos/piloto.png'}
-                        alt={`Foto de ${pilot.firstName} ${pilot.lastName}`}
-                        fill
-                        style={{objectFit: 'cover', objectPosition: 'center top'}}
-                        sizes="(max-width: 768px) 50vw, 33vw"
-                    />
+                <div className="relative w-48 h-48 md:w-56 md:h-56 rounded-full overflow-hidden border-4 border-white/20 mt-8 bg-black/30">
+                    {pilot ? (
+                        <Image
+                            src={pilot.imageUrl || '/pilotos/piloto.png'}
+                            alt={`Foto de ${pilot.firstName} ${pilot.lastName}`}
+                            fill
+                            style={{objectFit: 'cover', objectPosition: 'center top'}}
+                            sizes="(max-width: 768px) 50vw, 33vw"
+                        />
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-3xl font-bold">
+                            {result.guest_name?.slice(0,1) || 'G'}
+                        </div>
+                    )}
                 </div>
 
                 <div className="text-center w-full mt-4">
-                    <h3 className="text-3xl font-bold truncate w-full">{`${pilot.firstName} ${pilot.lastName}`}</h3>
+                    <h3 className="text-3xl font-bold truncate w-full">{pilot ? `${pilot.firstName ?? ''} ${pilot.lastName ?? ''}`.trim() : (result.guest_name || 'Invitado')}</h3>
                     <p className="text-md opacity-70" style={{ color: teamColor }}>
-                        {pilot.teamName || 'Independiente'}
+                        {pilot ? (pilot.teamName || 'Independiente') : 'Invitado'}
                     </p>
                     <div className="mt-4 text-4xl font-bold bg-black/40 px-6 py-2 rounded-lg inline-block">
                         {result.result_value} <span className="text-xl font-normal opacity-70">PTS</span>
@@ -112,25 +119,32 @@ export default function PodiumDisplay({ podium }: PodiumDisplayProps) {
                             </TableHeader>
                             <TableBody>
                                 {others.map(result => (
-                                    result.pilot &&
                                     <TableRow key={result.id} className="hover:bg-white/5">
                                         <TableCell className="text-center font-bold text-lg">{result.position}</TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-4">
-                                                <div className="relative w-12 h-12 rounded-full overflow-hidden">
-                                                    <Image
-                                                        src={result.pilot.imageUrl || '/pilotos/piloto.png'}
-                                                        alt={`Foto de ${result.pilot.firstName} ${result.pilot.lastName}`}
-                                                        fill
-                                                        style={{objectFit: 'cover'}}
-                                                        sizes="48px"
-                                                     />
+                                                <div className="relative w-12 h-12 rounded-full overflow-hidden bg-black/30">
+                                                    {result.pilot ? (
+                                                        <Image
+                                                            src={result.pilot.imageUrl || '/pilotos/piloto.png'}
+                                                            alt={`Foto de ${result.pilot.firstName} ${result.pilot.lastName}`}
+                                                            fill
+                                                            style={{objectFit: 'cover'}}
+                                                            sizes="48px"
+                                                         />
+                                                    ) : (
+                                                        <div className="w-full h-full flex items-center justify-center text-lg font-bold">
+                                                            {(result.guest_name || 'G').slice(0,1)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium">{`${result.pilot.firstName} ${result.pilot.lastName}`}</div>
-                                                    <div className="text-sm text-muted-foreground" style={{ color: result.pilot.teamColor || '#888' }}>
-                                                         {result.pilot.teamName || 'Independiente'} - #{result.pilot.number}
-                                                    </div>
+                                                    <div className="font-medium">{result.pilot ? `${result.pilot.firstName} ${result.pilot.lastName}` : (result.guest_name || 'Invitado')}</div>
+                                                    {result.pilot && (
+                                                        <div className="text-sm text-muted-foreground" style={{ color: result.pilot.teamColor || '#888' }}>
+                                                             {result.pilot.teamName || 'Independiente'}{result.pilot.number ? ` - #${result.pilot.number}` : ''}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </TableCell>

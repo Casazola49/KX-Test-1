@@ -44,7 +44,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
     <div className={cn("text-white bg-black pattern-bg min-h-screen")}>
       <PageTitle
         title={product.name}
-        subtitle={product.summary || "Detalles del Producto"}
+        subtitle={(product as any).summary || "Detalles del Producto"}
         className="font-formula1 text-4xl sm:text-5xl md:text-6xl neon-text-main"
         subtitleClassName="mt-4 text-lg text-gray-300"
       />
