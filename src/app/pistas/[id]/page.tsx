@@ -20,24 +20,50 @@ const supabase = createClient(
 );
 
 async function getTrackDetails(id: string): Promise<{ track: TrackInfo | null, events: RaceEvent[] }> {
+    console.log('🔍 Buscando pista con ID:', id);
+    
     const { data: track, error: trackError } = await supabase
         .from('tracks')
         .select('*')
         .eq('id', id)
         .single();
     
-    if (trackError) console.error("Error fetching track:", trackError);
+    if (trackError) {
+        console.error("❌ Error fetching track:", trackError);
+        return { track: null, events: [] };
+    }
+
+    console.log('✅ Pista encontrada:', track?.name);
 
     let events: RaceEvent[] = [];
     if (track) {
+      console.log('🔍 Buscando eventos para track_id:', id);
+      
+      // Buscar eventos por track_id
       const { data: eventData, error: eventError } = await supabase
-        .from('raceevents')
+        .from('events')
         .select('*')
-        .eq('trackName', track.name)
-        .order('date', { ascending: false });
+        .eq('track_id', id)
+        .order('event_date', { ascending: false });
 
-      if (eventError) console.error("Error fetching events:", eventError);
-      else events = eventData.map(e => ({...e, date: new Date(e.date)})) as RaceEvent[];
+      if (eventError) {
+        console.error("❌ Error fetching events:", eventError);
+      } else {
+        console.log('📊 Eventos encontrados:', eventData?.length || 0);
+        console.log('📋 Datos de eventos:', eventData);
+        
+        if (eventData && eventData.length > 0) {
+          events = eventData.map(e => ({
+            id: e.id,
+            name: e.name,
+            date: e.event_date, // Usar event_date en lugar de date
+            trackName: track.name,
+            track: track
+          })) as RaceEvent[];
+          
+          console.log('✅ Eventos procesados:', events.map(e => ({ name: e.name, date: e.date })));
+        }
+      }
     }
 
     return { track: track as TrackInfo | null, events };
@@ -132,35 +158,82 @@ export default async function PistaDetailPage({ params }: { params: { id: string
         <div className="mt-8 md:mt-12">
             <h2 className="text-3xl font-bold font-headline mb-6 text-center text-primary">Historial de Eventos</h2>
             {events.length > 0 ? (
-                <div className="space-y-4 max-w-2xl mx-auto">
-                    {events.map(event => (
-                        <Card key={event.id} className="shadow-md hover:shadow-lg transition-shadow">
-                            <CardHeader>
-                                <div className="flex justify-between items-center">
-                                    <CardTitle className="text-xl">{event.name}</CardTitle>
-                                    <span className="text-xs text-muted-foreground flex items-center">
-                                        <CheckCircle className="mr-1.5 h-3 w-3 text-green-500" />
-                                        Finalizado
-                                    </span>
-                                </div>
-                                <CardDescription className="flex items-center text-sm pt-1">
-                                    <CalendarDays size={14} className="mr-2"/>
-                                    {new Date(event.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-                                </CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Button asChild variant="link" className="p-0">
-                                    <Link href={`/calendario#${event.id}`}>
-                                        Ver Resultados del Evento
-                                        <Trophy className="ml-2 h-4 w-4"/>
-                                    </Link>
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    ))}
+                <div className="space-y-4 max-w-4xl mx-auto">
+                    <div className="text-center mb-6">
+                        <p className="text-muted-foreground">
+                            Se han realizado <span className="font-semibold text-primary">{events.length}</span> evento{events.length !== 1 ? 's' : ''} en esta pista
+                        </p>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                        {events.map(event => {
+                            const eventDate = new Date(event.date);
+                            const isUpcoming = eventDate > new Date();
+                            
+                            return (
+                                <Card key={event.id} className="shadow-md hover:shadow-lg transition-all duration-300 hover:scale-[1.02]">
+                                    <CardHeader className="pb-3">
+                                        <div className="flex justify-between items-start">
+                                            <CardTitle className="text-lg leading-tight pr-2">{event.name}</CardTitle>
+                                            <span className={`text-xs px-2 py-1 rounded-full flex items-center whitespace-nowrap ${
+                                                isUpcoming 
+                                                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300' 
+                                                    : 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300'
+                                            }`}>
+                                                {isUpcoming ? (
+                                                    <>
+                                                        <CalendarDays className="mr-1 h-3 w-3" />
+                                                        Próximo
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <CheckCircle className="mr-1 h-3 w-3" />
+                                                        Finalizado
+                                                    </>
+                                                )}
+                                            </span>
+                                        </div>
+                                        <CardDescription className="flex items-center text-sm">
+                                            <CalendarDays size={14} className="mr-2 flex-shrink-0"/>
+                                            <span>
+                                                {eventDate.toLocaleDateString('es-ES', { 
+                                                    weekday: 'long',
+                                                    year: 'numeric', 
+                                                    month: 'long', 
+                                                    day: 'numeric' 
+                                                })}
+                                            </span>
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="pt-0">
+                                        <div className="flex justify-between items-center">
+                                            <Button asChild variant="outline" size="sm" className="hover:bg-primary hover:text-primary-foreground">
+                                                <Link href={`/calendario/${event.id}`}>
+                                                    <Trophy className="mr-2 h-4 w-4"/>
+                                                    {isUpcoming ? 'Ver Detalles' : 'Ver Resultados'}
+                                                </Link>
+                                            </Button>
+                                            <div className="text-xs text-muted-foreground">
+                                                {isUpcoming 
+                                                    ? `En ${Math.ceil((eventDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24))} días`
+                                                    : `Hace ${Math.floor((new Date().getTime() - eventDate.getTime()) / (1000 * 60 * 60 * 24))} días`
+                                                }
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </div>
                 </div>
             ) : (
-                <p className="text-center text-muted-foreground mt-4">No hay historial de eventos registrados para esta pista.</p>
+                <div className="text-center py-12">
+                    <div className="text-6xl mb-4">🏁</div>
+                    <h3 className="text-xl font-semibold mb-2">Sin eventos registrados</h3>
+                    <p className="text-muted-foreground max-w-md mx-auto">
+                        Aún no se han registrado eventos para esta pista. 
+                        Los eventos aparecerán aquí una vez que se agreguen desde el panel de administración.
+                    </p>
+                </div>
             )}
         </div>
       </Section>

@@ -2,6 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -18,8 +19,12 @@ const GalleryItem = ({ image, className }: GalleryItemProps) => {
   const [isMobile, setIsMobile] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     setIsMobile(window.innerWidth < 768);
     setPrefersReducedMotion(window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   }, []);
@@ -71,11 +76,18 @@ const GalleryItem = ({ image, className }: GalleryItemProps) => {
         className={cn("relative overflow-hidden rounded-lg shadow-lg cursor-pointer group", className)}
         tabIndex={0}
         aria-label={`Ver ${image.title}`}
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => {
+          console.log('🖱️ Image clicked:', image.title, image.image_url);
+          setIsModalOpen(true);
+          setImageLoading(true);
+          setImageError(false);
+        }}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
             setIsModalOpen(true);
+            setImageLoading(true);
+            setImageError(false);
           }
         }}
         {...containerProps}
@@ -94,62 +106,72 @@ const GalleryItem = ({ image, className }: GalleryItemProps) => {
         </div>
       </Container>
 
-      {/* Modal personalizado estilo página de inicio pero más grande */}
-      {isModalOpen && (
+      {/* Modal con portal para mejor renderizado */}
+      {isModalOpen && mounted && typeof window !== 'undefined' && createPortal(
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-90"
+          className="gallery-modal fixed inset-0 bg-black flex items-center justify-center"
+          style={{ 
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.95)',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0
+          }}
           onClick={() => setIsModalOpen(false)}
         >
-          {/* Contenedor del modal - similar al de inicio pero más grande */}
-          <div 
-            className="relative bg-gray-800 rounded-lg shadow-2xl"
-            style={{
-              width: '80vw',
-              height: '75vh',
-              maxWidth: '80vw',
-              maxHeight: '75vh'
+          {/* Botón de cerrar */}
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsModalOpen(false);
             }}
-            onClick={(e) => e.stopPropagation()}
+            className="absolute top-4 right-4 bg-white bg-opacity-20 hover:bg-opacity-30 text-white rounded-full p-3 z-50"
+            aria-label="Cerrar imagen"
           >
-            {/* Header con título y botón cerrar */}
-            <div className="flex items-center justify-between p-4 border-b border-gray-700">
-              <h3 className="text-white text-lg font-semibold truncate pr-4">
-                {image.title || 'Sin título'}
-              </h3>
-              <button
-                onClick={() => setIsModalOpen(false)}
-                className="text-gray-400 hover:text-white transition-colors p-1"
-                aria-label="Cerrar imagen"
-              >
-                <X size={20} />
-              </button>
-            </div>
+            <X size={24} />
+          </button>
 
-            {/* Contenedor de la imagen con límites estrictos */}
-            <div 
-              className="p-4 flex items-center justify-center overflow-hidden"
+          {/* Contenedor de imagen simplificado */}
+          <div 
+            className="relative flex items-center justify-center p-8"
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              width: '100vw',
+              height: '100vh'
+            }}
+          >
+            {/* Solo una imagen simple y directa */}
+            <img
+              src={image.image_url}
+              alt={image.title}
+              className="max-w-full max-h-full object-contain"
               style={{
-                width: '80vw',
-                height: '70vh',
-                maxWidth: '80vw',
-                maxHeight: '70vh'
+                maxWidth: 'calc(100vw - 4rem)',
+                maxHeight: 'calc(100vh - 4rem)',
+                width: 'auto',
+                height: 'auto'
               }}
-            >
-              <img
-                src={image.image_url}
-                alt={image.title}
-                className="object-contain rounded"
-                style={{
-                  maxWidth: '100%',
-                  maxHeight: '100%',
-                  width: 'auto',
-                  height: 'auto',
-                  objectFit: 'contain'
-                }}
-              />
-            </div>
+              onLoad={() => {
+                console.log('✅ Portal modal image loaded:', image.image_url);
+              }}
+              onError={(e) => {
+                console.error('❌ Portal modal image error:', image.image_url, e);
+              }}
+            />
+            
+            {/* Título */}
+            {image.title && (
+              <div className="absolute bottom-8 left-8 right-8 bg-black bg-opacity-70 p-4 rounded text-center">
+                <h3 className="text-white text-lg font-semibold">
+                  {image.title}
+                </h3>
+              </div>
+            )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );

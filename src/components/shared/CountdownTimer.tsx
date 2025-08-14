@@ -77,35 +77,39 @@ const CountdownTimer: React.FC<CountdownTimerProps> = ({ date, onCountdownEnd })
 
   
   return (
-    <div className="flex flex-col items-center space-y-4 md:space-y-6">
-      <div className="flex items-center justify-center space-x-1 sm:space-x-2 md:space-x-3 lg:space-x-4 p-2 sm:p-3 md:p-4 rounded-lg bg-card/20 backdrop-blur-sm border border-primary/20">
+    <div className="countdown-container-force">
+      <div className="countdown-force-horizontal p-1 sm:p-2 md:p-4 rounded-lg bg-card/20 backdrop-blur-sm border border-primary/20 max-w-full">
         <FlipUnit
           currentValue={timeLeft.days}
-          label="Días"
+          label="DÍAS"
           delay={0}
+          className="flip-unit-horizontal"
         />
-        <div className="text-base sm:text-xl md:text-3xl lg:text-4xl text-primary font-bold animate-pulse">:</div>
+        <div className="countdown-separator-horizontal text-sm sm:text-base md:text-2xl lg:text-3xl text-primary font-bold animate-pulse">:</div>
         <FlipUnit
           currentValue={timeLeft.hours}
-          label="Horas"
+          label="HORAS"
           delay={100}
+          className="flip-unit-horizontal"
         />
-        <div className="text-base sm:text-xl md:text-3xl lg:text-4xl text-primary font-bold animate-pulse">:</div>
+        <div className="countdown-separator-horizontal text-sm sm:text-base md:text-2xl lg:text-3xl text-primary font-bold animate-pulse">:</div>
         <FlipUnit
           currentValue={timeLeft.minutes}
-          label="Minutos"
+          label="MINUTOS"
           delay={200}
+          className="flip-unit-horizontal"
         />
-        <div className="text-base sm:text-xl md:text-3xl lg:text-4xl text-primary font-bold animate-pulse">:</div>
+        <div className="countdown-separator-horizontal text-sm sm:text-base md:text-2xl lg:text-3xl text-primary font-bold animate-pulse">:</div>
         <FlipUnit
           currentValue={timeLeft.seconds}
-          label="Segundos"
+          label="SEGUNDOS"
           delay={300}
+          className="flip-unit-horizontal"
         />
       </div>
       
       {/* Mensaje adicional */}
-      <div className="text-center">
+      <div className="text-center mt-2 md:mt-4">
         <p className="text-xs sm:text-sm md:text-base text-muted-foreground">
           ¡No te pierdas la próxima carrera!
         </p>

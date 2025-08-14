@@ -38,8 +38,14 @@ const FlipUnit: React.FC<FlipUnitProps> = ({ currentValue, label, className, del
     >
       <div className={cn(
         "relative bg-card rounded-md sm:rounded-lg shadow-lg sm:shadow-xl overflow-hidden border border-primary/30 sm:border-2 group-hover:border-primary/70 transition-all duration-300",
-        "flex items-center justify-center",
-        "w-[32px] h-[40px] xs:w-[36px] xs:h-[44px] sm:w-[50px] sm:h-[60px] md:w-[70px] md:h-[80px] lg:w-[85px] lg:h-[95px]",
+        "flex items-center justify-center flip-unit-fixed",
+        // Tamaños más pequeños para móviles muy pequeños
+        "w-[28px] h-[36px]", // 320px y menores
+        "xs:w-[32px] xs:h-[40px]", // 360px
+        "sm:w-[42px] sm:h-[52px]", // 480px+
+        "md:w-[60px] md:h-[72px]", // 768px+
+        "lg:w-[75px] lg:h-[90px]", // 1024px+
+        "xl:w-[85px] xl:h-[95px]", // 1280px+
         "perspective" 
       )}>
         <div className={cn(
@@ -49,7 +55,14 @@ const FlipUnit: React.FC<FlipUnitProps> = ({ currentValue, label, className, del
           <div
             key={shouldAnimate ? numberKey : `static-${label}`} 
             className={cn(
-              "text-sm xs:text-base sm:text-lg md:text-2xl lg:text-3xl font-bold text-primary tabular-nums",
+              // Tamaños de texto más pequeños para móviles
+              "text-xs", // 320px y menores
+              "xs:text-sm", // 360px
+              "sm:text-base", // 480px+
+              "md:text-xl", // 768px+
+              "lg:text-2xl", // 1024px+
+              "xl:text-3xl", // 1280px+
+              "font-bold text-primary tabular-nums",
               "backface-hidden", 
               shouldAnimate && 'animate-value-change' // Animation will play on value change due to key update
             )}
@@ -59,7 +72,16 @@ const FlipUnit: React.FC<FlipUnitProps> = ({ currentValue, label, className, del
         </div>
         <div className="absolute inset-0 bg-gradient-to-br from-white/5 via-transparent to-white/5 opacity-30 group-hover:opacity-50 transition-opacity duration-300 pointer-events-none"></div>
       </div>
-      <span className="mt-0.5 sm:mt-1 text-[8px] xs:text-[9px] sm:text-[10px] md:text-xs lg:text-sm text-muted-foreground uppercase tracking-wide font-semibold group-hover:text-primary transition-colors duration-300">
+      <span className={cn(
+        "mt-0.5 sm:mt-1 text-muted-foreground uppercase tracking-wide font-semibold group-hover:text-primary transition-colors duration-300",
+        // Tamaños de etiquetas más pequeños para móviles
+        "text-[7px]", // 320px y menores
+        "xs:text-[8px]", // 360px
+        "sm:text-[9px]", // 480px+
+        "md:text-[10px]", // 768px+
+        "lg:text-xs", // 1024px+
+        "xl:text-sm" // 1280px+
+      )}>
         {label}
       </span>
     </div>

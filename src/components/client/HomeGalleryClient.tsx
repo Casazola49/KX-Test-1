@@ -43,6 +43,9 @@ export default function HomeGalleryClient() {
             created_at: item.created_at
           }));
 
+          // Debug: Log para ver las URLs de las imágenes
+          console.log('Gallery images loaded:', processedImages.map(img => ({ id: img.id, title: img.title, url: img.image_url })));
+
           setImages(processedImages);
         }
       } catch (error) {

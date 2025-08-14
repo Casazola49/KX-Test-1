@@ -10,7 +10,7 @@ import { HelpCircle, Info, X, ChevronLeft, ChevronRight, Loader } from 'lucide-r
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
-import ModelViewer from '@/components/client/ModelViewer'; // Importamos el nuevo visor 3D
+import OptimizedModelViewer from '@/components/client/OptimizedModelViewer'; // Importamos el visor 3D optimizado
 import { createClient } from '@supabase/supabase-js';
 
 // Tipos para los datos
@@ -144,23 +144,35 @@ const KartPage: NextPage = () => {
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
       );
       setLoading(true);
-      const { data, error } = await supabase.from('karts').select('*');
+      
+      try {
+        const { data, error } = await supabase.from('karts').select('*');
 
-      if (error) {
-        console.error('Error fetching karts:', error);
-      } else {
-        const categories = data.map(kart => ({
-          name: kart.category,
-          description: kart.description,
-          modelUrl: kart.model_url,
-          parts: BASE_KART_COMPONENTS // Asignamos las partes base a todas las categorías por ahora
-        }));
-        setKartCategories(categories);
-        if (categories.length > 0) {
-          setSelectedCategoryName(categories[0].name);
+        if (error) {
+          console.error('Error fetching karts:', error);
+        } else {
+          const categories = data.map(kart => ({
+            name: kart.category,
+            description: kart.description,
+            modelUrl: kart.model_url,
+            parts: BASE_KART_COMPONENTS
+          }));
+          
+          setKartCategories(categories);
+          if (categories.length > 0) {
+            setSelectedCategoryName(categories[0].name);
+            
+            // Precargar solo el primer modelo para carga más rápida
+            if (categories[0].modelUrl) {
+              console.log('Precargando modelo:', categories[0].modelUrl);
+            }
+          }
         }
+      } catch (error) {
+        console.error('Error fetching karts:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchKarts();
@@ -230,8 +242,8 @@ const KartPage: NextPage = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6 min-h-[70vh] md:min-h-[80vh]">
               <div className="h-[50vh] sm:h-[55vh] md:h-[60vh] lg:h-auto lg:col-span-2 relative bg-card rounded-lg shadow-xl border border-border flex items-center justify-center p-4">
-                 {/* El ModelViewer reemplaza la imagen estática */}
-                 <ModelViewer modelUrl={selectedCategoryData?.modelUrl || ''} />
+                 {/* El OptimizedModelViewer con carga inteligente */}
+                 <OptimizedModelViewer modelUrl={selectedCategoryData?.modelUrl || ''} autoQuality={true} />
               </div>
 
               <Card className="lg:col-span-1 rounded-lg shadow-xl p-4 md:p-6 border border-border overflow-y-auto flex flex-col">

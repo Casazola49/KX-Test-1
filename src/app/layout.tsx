@@ -100,8 +100,9 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="dark"
-          enableSystem
+          enableSystem={false}
           disableTransitionOnChange
+          storageKey="karting-theme"
         >
           <Header />
           <main className="flex-grow" role="main">

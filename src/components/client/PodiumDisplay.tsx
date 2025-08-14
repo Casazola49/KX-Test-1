@@ -19,7 +19,7 @@ const positionSuffix = (pos: number) => {
     return "th";
 }
 
-const PodiumCard = ({ result, position }: { result: FullPodium['results'][0], position: number }) => {
+const PodiumCard = ({ result, position, determinationMethod }: { result: FullPodium['results'][0], position: number, determinationMethod: string }) => {
     const pilot = result.pilot;
     // Mostrar tarjeta incluso si es invitado (sin piloto registrado)
     if (!pilot && !result.guest_name) return null; // Safety check
@@ -61,11 +61,12 @@ const PodiumCard = ({ result, position }: { result: FullPodium['results'][0], po
 
                 <div className="text-center w-full mt-4">
                     <h3 className="text-3xl font-bold truncate w-full">{pilot ? `${pilot.firstName ?? ''} ${pilot.lastName ?? ''}`.trim() : (result.guest_name || 'Invitado')}</h3>
-                    <p className="text-md opacity-70" style={{ color: teamColor }}>
+                    <p className="text-md text-white/90 bg-black/30 px-3 py-1 rounded-full inline-block">
                         {pilot ? (pilot.teamName || 'Independiente') : 'Invitado'}
+                        {pilot?.number && ` - #${pilot.number}`}
                     </p>
                     <div className="mt-4 text-4xl font-bold bg-black/40 px-6 py-2 rounded-lg inline-block">
-                        {result.result_value} <span className="text-xl font-normal opacity-70">PTS</span>
+                        {result.result_value}
                     </div>
                 </div>
             </div>
@@ -100,7 +101,7 @@ export default function PodiumDisplay({ podium }: PodiumDisplayProps) {
         <div className="py-8">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center mb-12">
                 {podiumOrder.map(result => (
-                    result ? <PodiumCard key={result.id} result={result} position={result.position} /> : null
+                    result ? <PodiumCard key={result.id} result={result} position={result.position} determinationMethod={podium.determination_method} /> : null
                 ))}
             </div>
 
@@ -141,7 +142,7 @@ export default function PodiumDisplay({ podium }: PodiumDisplayProps) {
                                                 <div>
                                                     <div className="font-medium">{result.pilot ? `${result.pilot.firstName} ${result.pilot.lastName}` : (result.guest_name || 'Invitado')}</div>
                                                     {result.pilot && (
-                                                        <div className="text-sm text-muted-foreground" style={{ color: result.pilot.teamColor || '#888' }}>
+                                                        <div className="text-sm text-white/70 bg-black/20 px-2 py-0.5 rounded inline-block">
                                                              {result.pilot.teamName || 'Independiente'}{result.pilot.number ? ` - #${result.pilot.number}` : ''}
                                                         </div>
                                                     )}

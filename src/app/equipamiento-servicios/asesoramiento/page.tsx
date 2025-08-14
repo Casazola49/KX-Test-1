@@ -5,6 +5,9 @@ import AdBanner from '@/components/shared/AdBanner';
 import { Mechanic } from '@/lib/types';
 import AsesoramientoClient from '@/components/client/AsesoramientoClient';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +42,20 @@ export default async function AsesoramientoPage() {
       />
       
       <main className="container mx-auto px-4 py-12">
+        {/* Botón para volver a Equipamiento y Servicios */}
+        <div className="mb-8">
+          <Button 
+            asChild 
+            variant="outline" 
+            className="border-primary text-primary hover:bg-primary hover:text-black transition-all duration-300"
+          >
+            <Link href="/equipamiento-servicios">
+              <ArrowLeft size={16} className="mr-2" />
+              Volver a Equipamiento y Servicios
+            </Link>
+          </Button>
+        </div>
+
         <AsesoramientoClient mechanics={mechanics} />
       </main>
 

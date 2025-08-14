@@ -7,12 +7,13 @@ export const LOGO_TEXT = "KartXperience"; // Or an SVG component path
 export const NAVIGATION_LINKS: NavItem[] = [
   { label: 'Inicio', href: '/' },
   { label: 'Noticias', href: '/noticias' },
+  { label: 'Carrera en Vivo', href: '/live' },
   { label: 'Pilotos y Equipos', href: '/pilotos-equipos' },
   { label: 'Pistas', href: '/pistas' },
   { label: 'Calendario', href: '/calendario' },
   { label: 'Galería', href: '/galeria' },
   { label: 'Equipamiento y Servicios', href: '/equipamiento-servicios' }, // Nueva Sección
-  { label: 'Cómo ser Piloto', href: '/como-ser-piloto' },
+  { label: 'Reglamento', href: '/reglamento' },
   { 
     label: 'Información', 
     href: '#', 
@@ -20,15 +21,14 @@ export const NAVIGATION_LINKS: NavItem[] = [
       { label: 'Historia del Karting', href: '/informacion/historia' },
       { label: 'Panorama Actual', href: '/informacion/panorama-actual' },
       { label: 'Futuro del Karting', href: '/informacion/futuro' },
+      { label: 'Kart', href: '/kart' },
     ]
   },
   {
     label: 'Más',
     href: '#',
     subItems: [
-      { label: 'Reglamento', href: '/reglamento' },
-      { label: 'Kart', href: '/kart' },
-      { label: 'Carrera en Vivo', href: '/live' },
+      { label: 'Cómo ser Piloto', href: '/como-ser-piloto' },
       { label: 'Contacto', href: '/contacto' },
     ]
   },

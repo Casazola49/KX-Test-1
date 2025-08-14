@@ -1,172 +1,111 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
-import { ExternalLink, FileText, Eye, RefreshCw } from 'lucide-react';
 
-export default function PdfViewer({ pdfUrl }: { pdfUrl: string }) {
+interface PdfViewerProps {
+  pdfUrl: string;
+}
+
+export default function PdfViewer({ pdfUrl }: PdfViewerProps) {
   const [mounted, setMounted] = useState(false);
-  const [viewerType, setViewerType] = useState<'embed' | 'iframe' | 'object' | 'fallback'>('embed');
-  const [hasError, setHasError] = useState(false);
+  const [currentMethod, setCurrentMethod] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     setMounted(true);
+    setIsLoading(true);
   }, []);
 
   if (!mounted) {
-    return <Skeleton className="aspect-[4/5] md:aspect-video w-full" />;
+    return (
+      <div className="w-full aspect-[4/5] md:aspect-video bg-gray-200 animate-pulse rounded-md flex items-center justify-center">
+        <div className="text-gray-500">Cargando...</div>
+      </div>
+    );
   }
 
+  // Construir URL absoluta para el PDF
   const absolutePdfUrl = new URL(pdfUrl, window.location.origin).href;
+  
+  // Diferentes métodos de visualización
+  const viewerMethods = [
+    // Método 1: Google Docs Viewer (más confiable)
+    `https://docs.google.com/gview?url=${encodeURIComponent(absolutePdfUrl)}&embedded=true`,
+    
+    // Método 2: PDF.js de Mozilla
+    `https://mozilla.github.io/pdf.js/web/viewer.html?file=${encodeURIComponent(absolutePdfUrl)}`,
+    
+    // Método 3: Visor directo del navegador
+    `${absolutePdfUrl}#toolbar=0&navpanes=0&scrollbar=0&view=FitH`
+  ];
 
-  const tryNextViewer = () => {
-    setHasError(false);
-    if (viewerType === 'embed') {
-      setViewerType('iframe');
-    } else if (viewerType === 'iframe') {
-      setViewerType('object');
-    } else if (viewerType === 'object') {
-      setViewerType('fallback');
-    } else {
-      setViewerType('embed');
-    }
+  const handleLoad = () => {
+    setIsLoading(false);
   };
 
   const handleError = () => {
-    setHasError(true);
-    // Automáticamente probar el siguiente visor después de 1 segundo
-    setTimeout(() => {
-      tryNextViewer();
-    }, 1000);
-  };
-
-  const renderPdfViewer = () => {
-    const commonProps = {
-      width: "100%",
-      height: "100%",
-      style: { border: 'none', minHeight: '500px' },
-      onError: handleError,
-      onLoad: () => setHasError(false)
-    };
-
-    switch (viewerType) {
-      case 'embed':
-        return (
-          <embed
-            src={`${absolutePdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-            type="application/pdf"
-            {...commonProps}
-          />
-        );
-      
-      case 'iframe':
-        return (
-          <iframe
-            src={`${absolutePdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-            title="PDF Viewer"
-            {...commonProps}
-          />
-        );
-      
-      case 'object':
-        return (
-          <object
-            data={`${absolutePdfUrl}#toolbar=0&navpanes=0&scrollbar=0`}
-            type="application/pdf"
-            {...commonProps}
-          >
-            <p>Tu navegador no puede mostrar PDFs. 
-              <a href={absolutePdfUrl} target="_blank" rel="noopener noreferrer">
-                Haz clic aquí para abrir el PDF
-              </a>
-            </p>
-          </object>
-        );
-      
-      default:
-        return (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted p-6">
-            <div className="text-center max-w-md">
-              <FileText size={64} className="text-primary mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2 text-foreground">
-                Vista previa no disponible
-              </h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                Los navegadores bloquean la visualización de PDFs locales por seguridad.
-                En producción (cuando subas el sitio) funcionará perfectamente.
-              </p>
-              <div className="space-y-2">
-                <Button 
-                  onClick={tryNextViewer}
-                  variant="outline" 
-                  size="sm"
-                  className="mr-2"
-                >
-                  <RefreshCw size={16} className="mr-2" />
-                  Probar otro método
-                </Button>
-                <Button 
-                  onClick={() => window.open(absolutePdfUrl, '_blank')}
-                  variant="default" 
-                  size="sm"
-                >
-                  <Eye size={16} className="mr-2" />
-                  Ver PDF Completo
-                </Button>
-              </div>
-            </div>
-          </div>
-        );
+    console.log(`Método ${currentMethod + 1} falló, probando siguiente...`);
+    if (currentMethod < viewerMethods.length - 1) {
+      setCurrentMethod(currentMethod + 1);
+      setIsLoading(true);
+    } else {
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative w-full bg-muted rounded-md border border-border overflow-hidden">
-      {/* Controles superiores */}
-      <div className="absolute top-2 left-2 z-10">
-        <div className="bg-background/80 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground">
-          Método: {viewerType}
-        </div>
-      </div>
-
-      <div className="absolute top-2 right-2 z-10 flex gap-2">
-        <Button 
-          onClick={tryNextViewer}
-          variant="secondary" 
-          size="sm"
-          title="Probar otro método de visualización"
-        >
-          <RefreshCw size={16} />
-        </Button>
-        <Button 
-          onClick={() => window.open(absolutePdfUrl, '_blank')}
-          variant="secondary" 
-          size="sm"
-        >
-          <ExternalLink size={16} className="mr-1" />
-          Abrir PDF
-        </Button>
-      </div>
-
-      <div className="relative aspect-[4/5] md:aspect-video w-full bg-white">
-        {hasError && (
-          <div className="absolute inset-0 flex items-center justify-center bg-yellow-50 z-10">
-            <div className="text-center p-4">
-              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full mx-auto mb-2"></div>
-              <p className="text-sm text-muted-foreground">
-                Probando método {viewerType}...
+    <div className="relative w-full bg-white rounded-md border border-gray-200 overflow-hidden">
+      <div className="relative aspect-[4/5] md:aspect-video w-full">
+        {/* Indicador de carga */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+            <div className="text-center">
+              <div className="animate-spin w-8 h-8 border-2 border-green-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+              <p className="text-sm text-gray-600">
+                Cargando reglamento... (Método {currentMethod + 1})
               </p>
             </div>
           </div>
         )}
         
-        {renderPdfViewer()}
-      </div>
-
-      {/* Indicador de estado */}
-      <div className="absolute bottom-2 left-2 bg-background/80 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground">
-        {hasError ? 'Cargando...' : 'Vista previa'}
+        {/* Visor principal */}
+        <iframe
+          key={currentMethod} // Forzar re-render cuando cambia el método
+          src={viewerMethods[currentMethod]}
+          title="Visor de PDF"
+          width="100%"
+          height="100%"
+          style={{ 
+            border: 'none', 
+            minHeight: '500px',
+            backgroundColor: 'white'
+          }}
+          onLoad={handleLoad}
+          onError={handleError}
+          className="absolute inset-0"
+          allow="fullscreen"
+        />
+        
+        {/* Fallback final si todos los métodos fallan */}
+        {!isLoading && currentMethod >= viewerMethods.length - 1 && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100 p-6">
+            <div className="text-center max-w-md">
+              <div className="text-4xl mb-4">📄</div>
+              <h3 className="text-lg font-semibold mb-2">PDF no disponible</h3>
+              <p className="text-sm text-gray-600 mb-4">
+                No se pudo cargar el PDF. Esto puede deberse a restricciones del navegador.
+              </p>
+              <a
+                href={absolutePdfUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-block px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+              >
+                Abrir PDF en nueva pestaña
+              </a>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

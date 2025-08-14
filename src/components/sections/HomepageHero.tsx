@@ -156,7 +156,7 @@ export default function HomepageHero({ events }: HomepageHeroProps) {
       </Suspense>
       
       {/* Contenido principal */}
-      <div className="relative z-10 text-center max-w-6xl mx-auto px-4 flex flex-col justify-center min-h-screen py-20 hero-content-landscape hero-content-mobile">
+      <div className="relative z-10 text-center max-w-6xl mx-auto px-2 sm:px-4 flex flex-col justify-center min-h-screen py-12 sm:py-16 md:py-20 hero-content-landscape hero-content-mobile">
         {liveRace && isLiveStreamActive ? (
           <div className="animate-fade-in-up">
             <div className="flex items-center justify-center gap-3 mb-6">
@@ -169,44 +169,47 @@ export default function HomepageHero({ events }: HomepageHeroProps) {
         ) : isNextRaceDateValid ? (
           <div className="animate-fade-in-up">
             {/* Título principal con efectos - Optimizado para móviles */}
-            <div className="mb-6 md:mb-8">
-              <div className="flex items-center justify-center gap-2 md:gap-4 mb-3 md:mb-4">
-                <Trophy className="w-6 h-6 md:w-8 md:h-8 text-primary animate-bounce-slow" />
-                <h1 className="hero-title-mobile text-lg md:text-4xl lg:text-5xl font-f1-bold text-primary neon-text-main uppercase tracking-wider mobile-text-contrast">
+            <div className="mb-4 md:mb-8 px-2 sm:px-4">
+              <div className="flex items-center justify-center gap-2 md:gap-4 mb-2 md:mb-4">
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary animate-bounce-slow flex-shrink-0" />
+                <h1 className="text-base sm:text-lg md:text-4xl lg:text-5xl font-f1-bold text-primary neon-text-main uppercase tracking-wider mobile-text-contrast text-center">
                   Próxima Carrera
                 </h1>
-                <Flag className="w-6 h-6 md:w-8 md:h-8 text-primary animate-bounce-slow" />
+                <Flag className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary animate-bounce-slow flex-shrink-0" />
               </div>
               
-              <h2 className="race-title-mobile text-sm sm:text-lg md:text-3xl lg:text-5xl font-f1-wide text-foreground mb-4 md:mb-6 animate-pulse-text mobile-text-shadow mobile-bg-contrast">
-                {nextRace.name}
-              </h2>
+              {/* Título de la carrera con mejor manejo de texto largo */}
+              <div className="w-full max-w-full overflow-hidden">
+                <h2 className="race-title-responsive text-xs xs:text-sm sm:text-base md:text-2xl lg:text-4xl xl:text-5xl font-f1-wide text-foreground mb-3 md:mb-6 animate-pulse-text mobile-text-shadow mobile-bg-contrast text-center leading-tight break-words hyphens-auto px-1 sm:px-2">
+                  {nextRace.name}
+                </h2>
+              </div>
             </div>
 
             {/* Contador principal - Optimizado para móviles */}
-            <div className="mb-6 md:mb-12 px-1 sm:px-2 md:px-4">
-              <div className="w-full max-w-full mx-auto overflow-hidden">
+            <div className="mb-4 md:mb-12 px-1 sm:px-2 md:px-4 w-full">
+              <div className="countdown-container-wrapper">
                 <CountdownTimer date={nextRace.date} />
               </div>
             </div>
 
             {/* Elementos informativos adicionales - Mejor en móviles */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
-              <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-lg p-4 md:p-6 hover:border-primary/40 transition-all duration-300 hover:scale-105">
-                <Zap className="w-6 h-6 md:w-8 md:h-8 text-primary mx-auto mb-2 md:mb-3" />
-                <h3 className="font-f1-bold text-sm md:text-lg mb-1 md:mb-2">VELOCIDAD</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-8 px-2 sm:px-0">
+              <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-lg p-3 sm:p-4 md:p-6 hover:border-primary/40 transition-all duration-300 hover:scale-105">
+                <Zap className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary mx-auto mb-1 sm:mb-2 md:mb-3" />
+                <h3 className="font-f1-bold text-xs sm:text-sm md:text-lg mb-1 md:mb-2">VELOCIDAD</h3>
                 <p className="text-muted-foreground text-xs md:text-sm">Adrenalina pura en cada curva</p>
               </div>
               
-              <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-lg p-4 md:p-6 hover:border-primary/40 transition-all duration-300 hover:scale-105">
-                <Trophy className="w-6 h-6 md:w-8 md:h-8 text-primary mx-auto mb-2 md:mb-3" />
-                <h3 className="font-f1-bold text-sm md:text-lg mb-1 md:mb-2">COMPETENCIA</h3>
+              <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-lg p-3 sm:p-4 md:p-6 hover:border-primary/40 transition-all duration-300 hover:scale-105">
+                <Trophy className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary mx-auto mb-1 sm:mb-2 md:mb-3" />
+                <h3 className="font-f1-bold text-xs sm:text-sm md:text-lg mb-1 md:mb-2">COMPETENCIA</h3>
                 <p className="text-muted-foreground text-xs md:text-sm">Los mejores pilotos de Bolivia</p>
               </div>
               
-              <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-lg p-4 md:p-6 hover:border-primary/40 transition-all duration-300 hover:scale-105 sm:col-span-2 md:col-span-1">
-                <Flag className="w-6 h-6 md:w-8 md:h-8 text-primary mx-auto mb-2 md:mb-3" />
-                <h3 className="font-f1-bold text-sm md:text-lg mb-1 md:mb-2">EMOCIÓN</h3>
+              <div className="bg-card/50 backdrop-blur-sm border border-primary/20 rounded-lg p-3 sm:p-4 md:p-6 hover:border-primary/40 transition-all duration-300 hover:scale-105 sm:col-span-2 md:col-span-1">
+                <Flag className="w-5 h-5 sm:w-6 sm:h-6 md:w-8 md:h-8 text-primary mx-auto mb-1 sm:mb-2 md:mb-3" />
+                <h3 className="font-f1-bold text-xs sm:text-sm md:text-lg mb-1 md:mb-2">EMOCIÓN</h3>
                 <p className="text-muted-foreground text-xs md:text-sm">Vive la experiencia del karting</p>
               </div>
             </div>

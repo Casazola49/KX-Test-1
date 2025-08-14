@@ -3,7 +3,7 @@ import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { FileText, Download } from 'lucide-react';
-import PdfViewer from '@/components/client/PdfViewer';
+import LocalPdfViewer from '@/components/client/LocalPdfViewer';
 import AdBanner from '@/components/shared/AdBanner';
 import React from 'react';
 
@@ -53,10 +53,10 @@ export default function ReglamentoPage() {
       <PageTitle title="Reglamentos Oficiales" subtitle="KartXperience Bolivia 2025" />
       <Section className="py-8 md:py-12">
         <p className="text-center text-lg text-muted-foreground mb-12 max-w-2xl mx-auto">
-          Conoce las normativas que rigen las competencias de karting en Bolivia para la temporada 2025. 
+          Conoce las normativas que rigen las competencias de karting en Bolivia para la temporada 2025.
           Es fundamental que todos los participantes estén familiarizados con estos reglamentos.
         </p>
-        
+
         <div className="space-y-12">
           {regulations.map((reg, index) => (
             <React.Fragment key={index}>
@@ -83,16 +83,16 @@ export default function ReglamentoPage() {
                     </a>
                   </div>
                 </div>
-                
-                <PdfViewer pdfUrl={reg.pdfForView} />
+
+                <LocalPdfViewer pdfUrl={reg.pdfForView} />
 
               </div>
               {/* Insert ad banner after the middle item */}
-              {index === middleIndex -1 && <AdBanner />}
+              {index === middleIndex - 1 && <AdBanner />}
             </React.Fragment>
           ))}
         </div>
-        
+
         <AdBanner />
 
         <div className="mt-12 text-center p-6 bg-card rounded-lg border border-border">

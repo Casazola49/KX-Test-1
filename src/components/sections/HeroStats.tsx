@@ -5,25 +5,25 @@ import { Users, Calendar, Trophy, Zap } from 'lucide-react';
 const stats = [
   {
     icon: Users,
-    value: "150+",
+    value: "50+",
     label: "Pilotos Activos",
     description: "Comunidad creciente"
   },
   {
     icon: Calendar,
-    value: "24",
+    value: "12+",
     label: "Eventos al Año",
-    description: "Competencias regulares"
+    description: "Demuestra lo necesario para el Campeonato"
   },
   {
     icon: Trophy,
-    value: "12",
+    value: "3",
     label: "Campeonatos",
     description: "Temporadas completadas"
   },
   {
     icon: Zap,
-    value: "80+",
+    value: "117+",
     label: "Km/h Máxima",
     description: "Velocidad alcanzada"
   }
