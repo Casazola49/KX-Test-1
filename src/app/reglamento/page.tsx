@@ -3,7 +3,7 @@ import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { FileText, Download } from 'lucide-react';
-import LocalPdfViewer from '@/components/client/LocalPdfViewer';
+import HybridPdfViewer from '@/components/client/HybridPdfViewer';
 import AdBanner from '@/components/shared/AdBanner';
 import React from 'react';
 
@@ -84,7 +84,7 @@ export default function ReglamentoPage() {
                   </div>
                 </div>
 
-                <LocalPdfViewer pdfUrl={reg.pdfForView} />
+                <HybridPdfViewer pdfUrl={reg.pdfForView} />
 
               </div>
               {/* Insert ad banner after the middle item */}
