@@ -99,54 +99,50 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!channel) return;
+    if (!channel || !isConnected) return;
 
     console.log('🔌 Setting up chat messages subscription');
 
-    channel
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'live_chat_messages'
-      }, (payload) => {
-        console.log('📨 New chat message:', payload.new);
-        const newMessage = payload.new as ChatMessage;
-        
-        setMessages(prev => {
-          const updated = [...prev, newMessage];
-          if (updated.length > messageLimit) {
-            return updated.slice(-messageLimit);
-          }
-          return updated;
-        });
-
-        if (!isNearBottomRef.current) {
-          setNewMessageCount(prev => prev + 1);
-        }
-
-        setTimeout(() => scrollToBottom(), 100);
-      })
-      .on('postgres_changes', {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'live_chat_messages'
-      }, (payload) => {
-        console.log('🗑️ Chat message deleted:', payload.old);
-        setMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'live_chat_messages'
-      }, (payload) => {
-        console.log('✏️ Chat message updated:', payload.new);
-        const updatedMessage = payload.new as ChatMessage;
-        setMessages(prev => 
-          prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg)
-        );
+    const handleInsert = (payload: any) => {
+      console.log('📨 New chat message:', payload.new);
+      const newMessage = payload.new as ChatMessage;
+      setMessages(prev => {
+        const updated = [...prev, newMessage];
+        return updated.length > messageLimit ? updated.slice(-messageLimit) : updated;
       });
+      if (!isNearBottomRef.current) {
+        setNewMessageCount(prev => prev + 1);
+      }
+      setTimeout(() => scrollToBottom(), 100);
+    };
 
-  }, [channel, messageLimit, scrollToBottom]);
+    const handleDelete = (payload: any) => {
+      console.log('🗑️ Chat message deleted:', payload.old);
+      setMessages(prev => prev.filter(msg => msg.id !== payload.old.id));
+    };
+
+    const handleUpdate = (payload: any) => {
+      console.log('✏️ Chat message updated:', payload.new);
+      const updatedMessage = payload.new as ChatMessage;
+      setMessages(prev => prev.map(msg => (msg.id === updatedMessage.id ? updatedMessage : msg)));
+    };
+
+    const table = 'live_chat_messages';
+    const schema = 'public';
+    channel
+      .on('postgres_changes', { event: 'INSERT', schema, table }, handleInsert)
+      .on('postgres_changes', { event: 'DELETE', schema, table }, handleDelete)
+      .on('postgres_changes', { event: 'UPDATE', schema, table }, handleUpdate);
+
+    return () => {
+      if (channel) {
+        console.log('🔌 Cleaning up chat message subscription listeners');
+        (channel as any).off('postgres_changes', { event: 'INSERT', schema, table });
+        (channel as any).off('postgres_changes', { event: 'DELETE', schema, table });
+        (channel as any).off('postgres_changes', { event: 'UPDATE', schema, table });
+      }
+    };
+  }, [channel, isConnected, messageLimit, scrollToBottom]);
 
   // Initial fetch
   useEffect(() => {

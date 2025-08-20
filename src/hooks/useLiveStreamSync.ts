@@ -79,35 +79,35 @@ export function useLiveStreamSync(options: UseLiveStreamSyncOptions = {}) {
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!channel) return;
+    if (!channel || !isConnected) return;
 
     console.log('🔌 Setting up live stream settings subscription');
 
-    const subscription = channel
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'live_stream'
-      }, (payload) => {
-        console.log('🔄 Live stream settings updated:', payload.new);
-        setSettings(payload.new as LiveStreamSettings);
-        setLastUpdate(new Date());
-        setError(null);
-      })
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'live_stream'
-      }, (payload) => {
-        console.log('➕ New live stream settings:', payload.new);
-        setSettings(payload.new as LiveStreamSettings);
-        setLastUpdate(new Date());
-        setError(null);
-      });
+    const handleChanges = (payload: any) => {
+      console.log('🔄 Live stream settings updated:', payload.new);
+      setSettings(payload.new as LiveStreamSettings);
+      setLastUpdate(new Date());
+      setError(null);
+    };
 
-    // No cleanup function needed here, as useRealtimeConnection handles channel cleanup.
-    // The listeners are attached to the channel instance and will be garbage collected with it.
-  }, [channel]);
+    channel.on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'live_stream'
+    }, handleChanges);
+
+    return () => {
+      if (channel) {
+        console.log('🔌 Cleaning up live stream settings subscription listeners');
+        // Use type assertion to bypass faulty type definitions and call the cleanup method.
+        (channel as any).off('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'live_stream'
+        });
+      }
+    };
+  }, [channel, isConnected]);
 
   // Initial fetch
   useEffect(() => {
