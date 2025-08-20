@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRealtimeConnection } from './useRealtimeConnection';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase-client';
 
 export interface LiveStreamSettings {
   id: number;
@@ -25,11 +25,6 @@ export function useLiveStreamSync(options: UseLiveStreamSyncOptions = {}) {
   const [isLoading, setIsLoading] = useState(!initialSettings);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   // Connection management for live stream settings
   const {
@@ -80,11 +75,11 @@ export function useLiveStreamSync(options: UseLiveStreamSyncOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [initialSettings, supabase]);
+  }, [initialSettings]);
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!channel || !isConnected) return;
+    if (!channel) return;
 
     console.log('🔌 Setting up live stream settings subscription');
 
@@ -110,10 +105,9 @@ export function useLiveStreamSync(options: UseLiveStreamSyncOptions = {}) {
         setError(null);
       });
 
-    return () => {
-      console.log('🔌 Cleaning up live stream settings subscription');
-    };
-  }, [channel, isConnected]);
+    // No cleanup function needed here, as useRealtimeConnection handles channel cleanup.
+    // The listeners are attached to the channel instance and will be garbage collected with it.
+  }, [channel]);
 
   // Initial fetch
   useEffect(() => {

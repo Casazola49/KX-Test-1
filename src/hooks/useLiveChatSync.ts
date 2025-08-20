@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRealtimeConnection } from './useRealtimeConnection';
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '@/lib/supabase-client';
 
 export interface ChatMessage {
   id: string;
@@ -29,11 +29,6 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const isNearBottomRef = useRef(true);
   const lastMessageCountRef = useRef(0);
-
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   // Connection management for chat messages
   const {
@@ -100,15 +95,15 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [supabase, messageLimit, scrollToBottom]);
+  }, [messageLimit, scrollToBottom]);
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!channel || !isConnected) return;
+    if (!channel) return;
 
     console.log('🔌 Setting up chat messages subscription');
 
-    const subscription = channel
+    channel
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
@@ -119,19 +114,16 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
         
         setMessages(prev => {
           const updated = [...prev, newMessage];
-          // Keep only the latest messages within limit
           if (updated.length > messageLimit) {
             return updated.slice(-messageLimit);
           }
           return updated;
         });
 
-        // Update new message count if user is not near bottom
         if (!isNearBottomRef.current) {
           setNewMessageCount(prev => prev + 1);
         }
 
-        // Auto-scroll if user is near bottom
         setTimeout(() => scrollToBottom(), 100);
       })
       .on('postgres_changes', {
@@ -154,10 +146,7 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
         );
       });
 
-    return () => {
-      console.log('🔌 Cleaning up chat messages subscription');
-    };
-  }, [channel, isConnected, messageLimit, scrollToBottom]);
+  }, [channel, messageLimit, scrollToBottom]);
 
   // Initial fetch
   useEffect(() => {
@@ -199,7 +188,7 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
       console.error('❌ Error clearing messages:', err);
       setError(err instanceof Error ? err.message : 'Failed to clear messages');
     }
-  }, [supabase]);
+  }, []);
 
   return {
     messages,
