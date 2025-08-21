@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import LiveChatConsole from '@/components/admin/LiveChatConsole'; // Importamos la consola de chat
+import LiveTroubleshooting from '@/components/admin/LiveTroubleshooting';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,7 +33,7 @@ export default async function AdminLivePage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
           {/* Columna de Configuración */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 space-y-8">
             <form action={updateLiveStreamSettings}>
               <Card>
                 <CardHeader>
@@ -63,6 +64,9 @@ export default async function AdminLivePage() {
                 </CardContent>
               </Card>
             </form>
+
+            {/* Diagnóstico del Sistema */}
+            <LiveTroubleshooting />
           </div>
 
           {/* Columna del Chat en Vivo */}

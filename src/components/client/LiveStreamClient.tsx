@@ -1,17 +1,20 @@
 
 "use client";
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Radio, MessageSquare, Info, Users, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useLiveStreamSync } from '@/hooks/useLiveStreamSync';
 import { useLiveChatSync } from '@/hooks/useLiveChatSync';
+// import { usePageCleanup } from '@/hooks/usePageCleanup';
 import ConnectionStatus from '@/components/shared/ConnectionStatus';
 import StreamStats from '@/components/client/StreamStats';
 
 const LiveChatFeed = ({ isLive }: { isLive: boolean }) => {
+  const [isChatMounted, setIsChatMounted] = useState(true);
+  
   const {
     messages,
     isLoading,
@@ -23,10 +26,18 @@ const LiveChatFeed = ({ isLive }: { isLive: boolean }) => {
     scrollToBottomManually,
     reconnect
   } = useLiveChatSync({
-    enabled: isLive,
+    enabled: isLive && isChatMounted,
     messageLimit: 100,
     autoScroll: true
   });
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      console.log('🧹 LiveChatFeed unmounting, cleaning up...');
+      setIsChatMounted(false);
+    };
+  }, []);
   
   const formatTime = (timestamp: string) => {
     return new Date(timestamp).toLocaleTimeString('es-ES', {
@@ -153,6 +164,8 @@ const LiveChatFeed = ({ isLive }: { isLive: boolean }) => {
 };
 
 export default function LiveStreamClient({ initialSettings }: { initialSettings: any }) {
+  const [isComponentMounted, setIsComponentMounted] = useState(true);
+  
   const {
     settings: currentSettings,
     isLoading,
@@ -164,8 +177,25 @@ export default function LiveStreamClient({ initialSettings }: { initialSettings:
     reconnect
   } = useLiveStreamSync({
     initialSettings,
-    enabled: true
+    enabled: isComponentMounted
   });
+
+  // Use page cleanup hook to handle navigation
+  // usePageCleanup({
+  //   onCleanup: () => {
+  //     console.log('🧹 LiveStreamClient cleaning up connections...');
+  //     setIsComponentMounted(false);
+  //   },
+  //   enabled: true
+  // });
+
+  // Cleanup on unmount to prevent navigation blocking
+  useEffect(() => {
+    return () => {
+      console.log('🧹 LiveStreamClient unmounting, cleaning up...');
+      setIsComponentMounted(false);
+    };
+  }, []);
 
   // Loading state
   if (isLoading) {

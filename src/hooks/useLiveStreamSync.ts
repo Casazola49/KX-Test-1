@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRealtimeConnection } from './useRealtimeConnection';
 import { createClient } from '@supabase/supabase-js';
+// import { REALTIME_CONFIG } from '@/lib/realtime-config';
 
 export interface LiveStreamSettings {
   id: number;
@@ -43,11 +44,13 @@ export function useLiveStreamSync(options: UseLiveStreamSyncOptions = {}) {
     maxRetries: 5,
     retryDelay: 2000,
     onConnectionChange: (status) => {
-      console.log('🔄 Live stream sync connection:', status);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔄 Live stream sync connection:', status);
+      }
     }
   });
 
-  // Fetch initial settings if not provided
+  // Fetch initial settings if not provided - FIXED: Stable dependencies
   const fetchSettings = useCallback(async () => {
     if (initialSettings) return;
     
@@ -80,11 +83,11 @@ export function useLiveStreamSync(options: UseLiveStreamSyncOptions = {}) {
     } finally {
       setIsLoading(false);
     }
-  }, [initialSettings, supabase]);
+  }, []); // Empty dependencies - function is stable
 
   // Set up real-time subscription
   useEffect(() => {
-    if (!channel || !isConnected) return;
+    if (!channel || !isConnected || !enabled) return;
 
     console.log('🔌 Setting up live stream settings subscription');
 
@@ -112,13 +115,28 @@ export function useLiveStreamSync(options: UseLiveStreamSyncOptions = {}) {
 
     return () => {
       console.log('🔌 Cleaning up live stream settings subscription');
+      try {
+        // Clean up subscription handlers
+        channel.unsubscribe();
+      } catch (error) {
+        console.warn('⚠️ Error cleaning up subscription:', error);
+      }
     };
-  }, [channel, isConnected]);
+  }, [channel, isConnected, enabled]);
 
-  // Initial fetch
+  // Initial fetch - FIXED: Remove fetchSettings from dependencies to prevent infinite loop
   useEffect(() => {
-    fetchSettings();
-  }, [fetchSettings]);
+    if (enabled && !initialSettings) {
+      fetchSettings();
+    }
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      console.log('🧹 Cleaning up live stream sync');
+      setSettings(null);
+      setError(null);
+    };
+  }, [enabled]); // Only depend on enabled, not fetchSettings
 
   // Refresh settings manually
   const refreshSettings = useCallback(async () => {
