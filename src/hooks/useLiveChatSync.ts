@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRealtimeConnection } from './useRealtimeConnection';
 import { createClient } from '@supabase/supabase-js';
+// import { REALTIME_CONFIG } from '@/lib/realtime-config';
 
 export interface ChatMessage {
   id: string;
@@ -45,9 +46,11 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
     channelName: 'live_chat_messages_sync',
     enabled,
     maxRetries: 5,
-    retryDelay: 1500,
+    retryDelay: 2000,
     onConnectionChange: (status) => {
-      console.log('💬 Chat sync connection:', status);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('💬 Chat sync connection:', status);
+      }
     }
   });
 
@@ -75,7 +78,7 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
     }
   }, [autoScroll]);
 
-  // Fetch initial messages
+  // Fetch initial messages - FIXED: Remove scrollToBottom dependency
   const fetchMessages = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -92,19 +95,26 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
       setMessages(data || []);
       lastMessageCountRef.current = data?.length || 0;
       
-      // Scroll to bottom after initial load
-      setTimeout(() => scrollToBottom(true), 100);
+      // Scroll to bottom after initial load - Direct scroll instead of callback
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          scrollContainerRef.current.scrollTo({
+            top: scrollContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
+      }, 100);
     } catch (err) {
       console.error('❌ Error fetching chat messages:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch messages');
     } finally {
       setIsLoading(false);
     }
-  }, [supabase, messageLimit, scrollToBottom]);
+  }, [supabase, messageLimit]); // Removed scrollToBottom dependency
 
-  // Set up real-time subscription
+  // Set up real-time subscription - FIXED: Remove scrollToBottom from dependencies
   useEffect(() => {
-    if (!channel || !isConnected) return;
+    if (!channel || !isConnected || !enabled) return;
 
     console.log('🔌 Setting up chat messages subscription');
 
@@ -131,8 +141,15 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
           setNewMessageCount(prev => prev + 1);
         }
 
-        // Auto-scroll if user is near bottom
-        setTimeout(() => scrollToBottom(), 100);
+        // Auto-scroll if user is near bottom - Use direct scroll instead of callback
+        setTimeout(() => {
+          if (scrollContainerRef.current && (isNearBottomRef.current || autoScroll)) {
+            scrollContainerRef.current.scrollTo({
+              top: scrollContainerRef.current.scrollHeight,
+              behavior: 'smooth'
+            });
+          }
+        }, 100);
       })
       .on('postgres_changes', {
         event: 'DELETE',
@@ -156,13 +173,29 @@ export function useLiveChatSync(options: UseLiveChatSyncOptions = {}) {
 
     return () => {
       console.log('🔌 Cleaning up chat messages subscription');
+      try {
+        // Clean up subscription handlers
+        channel.unsubscribe();
+      } catch (error) {
+        console.warn('⚠️ Error cleaning up chat subscription:', error);
+      }
     };
-  }, [channel, isConnected, messageLimit, scrollToBottom]);
+  }, [channel, isConnected, enabled, messageLimit, autoScroll]); // Removed scrollToBottom dependency
 
-  // Initial fetch
+  // Initial fetch - FIXED: Remove fetchMessages from dependencies to prevent infinite loop
   useEffect(() => {
-    fetchMessages();
-  }, [fetchMessages]);
+    if (enabled) {
+      fetchMessages();
+    }
+    
+    // Cleanup function to prevent memory leaks
+    return () => {
+      console.log('🧹 Cleaning up live chat sync');
+      setMessages([]);
+      setError(null);
+      setNewMessageCount(0);
+    };
+  }, [enabled]); // Only depend on enabled, not fetchMessages
 
   // Reset new message count when user scrolls to bottom
   const handleScroll = useCallback(() => {

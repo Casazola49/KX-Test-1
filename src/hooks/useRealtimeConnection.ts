@@ -72,10 +72,18 @@ export function useRealtimeConnection(options: UseRealtimeConnectionOptions) {
     }
     
     if (channelRef.current && supabaseRef.current) {
-      supabaseRef.current.removeChannel(channelRef.current);
-      channelRef.current = null;
+      try {
+        // Unsubscribe from all events before removing channel
+        channelRef.current.unsubscribe();
+        supabaseRef.current.removeChannel(channelRef.current);
+        console.log(`🔌 Channel ${channelName} removed successfully`);
+      } catch (error) {
+        console.warn(`⚠️ Error removing channel ${channelName}:`, error);
+      } finally {
+        channelRef.current = null;
+      }
     }
-  }, []);
+  }, [channelName]);
 
   const connect = useCallback(async () => {
     if (!supabaseRef.current || !enabled) return null;
@@ -164,10 +172,13 @@ export function useRealtimeConnection(options: UseRealtimeConnectionOptions) {
     return cleanup;
   }, [enabled, connect, disconnect, cleanup]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount and route changes
   useEffect(() => {
-    return cleanup;
-  }, [cleanup]);
+    return () => {
+      console.log(`🧹 Cleaning up realtime connection for ${channelName}`);
+      cleanup();
+    };
+  }, [cleanup, channelName]);
 
   return {
     channel: channelRef.current,
