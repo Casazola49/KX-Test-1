@@ -9,7 +9,8 @@ import { z } from "zod";
 import { createPilot, updatePilot } from '@/app/admin/pilots/actions';
 import type { Pilot } from "@/lib/types";
 
-import { createClient } from '@supabase/supabase-js';
+import { getAllCategories } from '@/lib/data-service';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import type { Category } from '@/lib/types';
 
 import { Button } from "@/components/ui/button";
@@ -68,12 +69,7 @@ const SectionTitle: React.FC<{ icon: React.ElementType; title: string }> = ({ ic
   </div>
 );
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-const IMAGE_BUCKET = 'kpx-images';
-const KART_BUCKET = 'karts';
+// Usando Cloudinary para el almacenamiento de archivos
 
 
 export default function PilotFormV2({ pilot }: PilotFormProps) {
@@ -132,16 +128,12 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
     },
   });
 
-  // Cargar categorías desde la BD para poblar el selector
+  // Cargar categorías desde Firebase para poblar el selector
   useEffect(() => {
     const loadCategories = async () => {
       try {
-        const { data, error } = await supabase
-          .from('categories')
-          .select('name')
-          .order('name', { ascending: true });
-        if (error) throw error;
-        const names = (data as Category[]).map(c => c.name).filter(Boolean);
+        const categoriesData = await getAllCategories();
+        const names = categoriesData.map(c => c.name).filter(Boolean);
         // Asegurar que la categoría del piloto en edición esté presente
         const withEditing = pilot?.category && !names.includes(pilot.category)
           ? [...names, pilot.category]
@@ -191,23 +183,14 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
     }
   };
 
-  const uploadFileToSupabase = async (file: File, bucket: string, folder: string): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${folder}/${Date.now()}_${Math.random()}.${fileExt}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(bucket)
-      .upload(fileName, file);
-
-    if (uploadError) {
-      throw uploadError;
+  const uploadFileToCloudinary = async (file: File, folder: string): Promise<string> => {
+    try {
+      const url = await uploadToCloudinary(file, folder);
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir el archivo');
     }
-
-    const { data } = supabase.storage
-      .from(bucket)
-      .getPublicUrl(fileName);
-
-    return data.publicUrl;
   };
 
   async function onSubmit(data: PilotFormValues) {
@@ -220,7 +203,7 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
     try {
       let finalImageUrl = pilot?.imageUrl;
       if (imageFile) {
-        finalImageUrl = await uploadFileToSupabase(imageFile, IMAGE_BUCKET, 'pilot-images');
+        finalImageUrl = await uploadFileToCloudinary(imageFile, 'pilot-images');
       }
 
       if (!isEditing && !finalImageUrl) {
@@ -229,7 +212,7 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
 
       let finalKartModelUrl = pilot?.model_3d_url;
       if (kartModelFile) {
-        finalKartModelUrl = await uploadFileToSupabase(kartModelFile, KART_BUCKET, 'karts');
+        finalKartModelUrl = await uploadFileToCloudinary(kartModelFile, 'karts');
       }
 
       const achievementsArray = data.achievements?.map(a => a.value).filter(Boolean) || [];

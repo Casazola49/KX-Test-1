@@ -9,7 +9,7 @@ import { z } from "zod";
 import type { TrackInfo } from "@/lib/types";
 import { saveTrack } from "@/app/admin/tracks/actions";
 
-import { createClient } from '@supabase/supabase-js';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -47,13 +47,6 @@ type TrackFormValues = z.infer<typeof TrackFormSchema>;
 interface TrackFormProps {
     track?: TrackInfo;
 }
-
-// Initialize Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-const IMAGE_BUCKET = 'kpx-images';
 
 export default function TrackForm({ track }: TrackFormProps) {
   const router = useRouter();
@@ -106,19 +99,14 @@ export default function TrackForm({ track }: TrackFormProps) {
     }
   };
 
-  const uploadFileToSupabase = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Date.now()}_${Math.random()}.${fileExt}`;
-    const filePath = `track-images/${fileName}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(IMAGE_BUCKET)
-      .upload(filePath, file);
-
-    if (uploadError) throw uploadError;
-    
-    const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(filePath);
-    return data.publicUrl;
+  const uploadFileToCloudinary = async (file: File, folder: string): Promise<string> => {
+    try {
+      const url = await uploadToCloudinary(file, folder);
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir el archivo');
+    }
   };
 
   async function onSubmit(data: TrackFormValues) {
@@ -128,7 +116,7 @@ export default function TrackForm({ track }: TrackFormProps) {
     try {
       let mainImageUrl = track?.imageUrl;
       if (mainImageFile) {
-        mainImageUrl = await uploadFileToSupabase(mainImageFile);
+        mainImageUrl = await uploadFileToCloudinary(mainImageFile, 'track-images');
       } else if (!isEditing) {
         throw new Error("La imagen principal es obligatoria para crear una nueva pista.");
       }
@@ -136,7 +124,7 @@ export default function TrackForm({ track }: TrackFormProps) {
       let galleryImageUrls = track?.galleryImageUrls || [];
       if (galleryImageFiles.length > 0) {
         galleryImageUrls = await Promise.all(
-          galleryImageFiles.map(file => uploadFileToSupabase(file))
+          galleryImageFiles.map(file => uploadFileToCloudinary(file, 'track-gallery'))
         );
       }
 

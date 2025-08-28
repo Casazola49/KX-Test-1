@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Podium } from '@/lib/types';
+import { FullPodium } from '@/lib/types';
 import { groupPodiumsByCategory } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,7 +9,7 @@ import PodiumDisplay from './PodiumDisplay';
 import Section from '../shared/Section';
 
 interface EventPodiumResultsProps {
-  podiums: Podium[];
+  podiums: FullPodium[];
 }
 
 const podiumTypeLabels: { [key: string]: string } = {
@@ -23,7 +23,14 @@ const podiumTypeLabels: { [key: string]: string } = {
 };
 
 export default function EventPodiumResults({ podiums }: EventPodiumResultsProps) {
-    if (!podiums || podiums.length === 0) {
+    console.log('🔍 DEBUG - EventPodiumResults received:', {
+        podiums,
+        type: typeof podiums,
+        isArray: Array.isArray(podiums),
+        length: podiums?.length
+    });
+
+    if (!podiums || !Array.isArray(podiums) || podiums.length === 0) {
         return (
             <Section title="Resultados del Evento">
                 <Card className="text-center p-8">
@@ -36,7 +43,7 @@ export default function EventPodiumResults({ podiums }: EventPodiumResultsProps)
         );
     }
   
-  const groupedPodiums = groupPodiumsByCategory(podiums as any);
+  const groupedPodiums = groupPodiumsByCategory(podiums);
 
   return (
     <Section title="Resultados y Podios">

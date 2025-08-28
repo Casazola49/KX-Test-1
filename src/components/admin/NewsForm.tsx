@@ -8,8 +8,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { saveNews } from '@/app/admin/add-news/actions';
 import type { NewsArticle } from "@/lib/types";
-
-import { createClient } from '@supabase/supabase-js';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -35,12 +34,7 @@ interface NewsFormProps {
     article?: NewsArticle;
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
-const IMAGE_BUCKET = 'kpx-images';
+// Usando Cloudinary para el almacenamiento de imágenes
 
 export default function NewsForm({ article }: NewsFormProps) {
   const router = useRouter();
@@ -84,13 +78,14 @@ export default function NewsForm({ article }: NewsFormProps) {
     }
   };
 
-  const uploadFileToSupabase = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `news/${Date.now()}_${Math.random()}.${fileExt}`;
-    const { error: uploadError } = await supabase.storage.from(IMAGE_BUCKET).upload(fileName, file);
-    if (uploadError) throw uploadError;
-    const { data } = supabase.storage.from(IMAGE_BUCKET).getPublicUrl(fileName);
-    return data.publicUrl;
+  const uploadFileToCloudinary = async (file: File): Promise<string> => {
+    try {
+      const url = await uploadToCloudinary(file, 'news');
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir la imagen');
+    }
   };
 
   async function onSubmit(data: NewsFormValues) {
@@ -100,7 +95,7 @@ export default function NewsForm({ article }: NewsFormProps) {
     try {
       let mainImageUrl = article?.imageUrl;
       if (mainImageFile) {
-        mainImageUrl = await uploadFileToSupabase(mainImageFile);
+        mainImageUrl = await uploadFileToCloudinary(mainImageFile);
       } else if (!isEditing) {
         throw new Error("La imagen principal es obligatoria para una nueva noticia.");
       }
@@ -108,7 +103,7 @@ export default function NewsForm({ article }: NewsFormProps) {
       let finalGalleryImageUrls = article?.galleryImageUrls || [];
       if (galleryImageFiles.length > 0) {
         finalGalleryImageUrls = await Promise.all(
-          galleryImageFiles.map(file => uploadFileToSupabase(file))
+          galleryImageFiles.map(file => uploadFileToCloudinary(file))
         );
       }
       

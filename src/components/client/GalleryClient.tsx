@@ -8,17 +8,23 @@ import Image from 'next/image';
 import Lightbox from "yet-another-react-lightbox";
 import "yet-another-react-lightbox/styles.css";
 
-// Helper para optimizar las imágenes de Supabase
+// Helper para optimizar las imágenes de Cloudinary
 const getTransformedUrl = (url: string, width: number, height: number) => {
   if (!url) return 'https://placehold.co/400x400.png';
-  try {
-    const urlObj = new URL(url);
-    const pathSegments = urlObj.pathname.split('/');
-    const objectPath = pathSegments.slice(pathSegments.indexOf('public') + 1).join('/');
-    return `${urlObj.origin}/storage/v1/render/image/public/${objectPath}?width=${width}&height=${height}&resize=cover`;
-  } catch {
-    return 'https://placehold.co/400x400.png';
+  
+  // Si es una URL de Cloudinary, aplicar transformaciones
+  if (url.includes('cloudinary.com')) {
+    try {
+      // Insertar transformaciones de Cloudinary
+      const transformations = `c_fill,w_${width},h_${height},q_auto,f_auto`;
+      return url.replace('/upload/', `/upload/${transformations}/`);
+    } catch {
+      return url; // Si falla, usar la URL original
+    }
   }
+  
+  // Para otras URLs, usar tal como están
+  return url;
 };
 
 
@@ -26,12 +32,16 @@ export default function GalleryClient({ items, tags }: { items: GalleryItem[], t
   const [selectedTag, setSelectedTag] = useState<string>('Todos');
   const [lightboxIndex, setLightboxIndex] = useState(-1);
 
+  // Mostrar todas las imágenes (ya migradas a Cloudinary)
+  const validItems = items;
+
   const filteredItems = useMemo(() => {
     if (selectedTag === 'Todos') {
-      return items;
+      return validItems;
     }
-    return items.filter(item => item.tags && item.tags.includes(selectedTag));
-  }, [items, selectedTag]);
+    // Usar category en lugar de tags para el filtrado
+    return validItems.filter(item => item.category === selectedTag);
+  }, [validItems, selectedTag]);
 
   const lightboxSlides = filteredItems.map(item => ({
       // Usar la URL original sin transformar para mejor calidad

@@ -2,8 +2,12 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
 import { z } from 'zod';
+import { 
+  updateLiveStreamConfig, 
+  createChatMessage, 
+  getLiveStreamConfig 
+} from '@/lib/data-service';
 
 // --- Esquemas de Validación ---
 const LiveStreamSchema = z.object({
@@ -17,11 +21,7 @@ const ChatMessageSchema = z.object({
 });
 
 
-// --- Cliente de Supabase Admin ---
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Migrado a Firebase - ya no necesitamos cliente de Supabase
 
 
 // --- Acción para Actualizar Configuración del Stream ---
@@ -37,17 +37,11 @@ export async function updateLiveStreamSettings(formData: FormData): Promise<void
   }
 
   try {
-    const { error } = await supabaseAdmin
-      .from('live_stream')
-      .update({
-        is_live: validatedFields.data.is_live,
-        stream_title: validatedFields.data.stream_title,
-        iframe_url: validatedFields.data.iframe_url,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('id', 1);
-
-    if (error) throw error;
+    await updateLiveStreamConfig({
+      is_live: validatedFields.data.is_live,
+      stream_title: validatedFields.data.stream_title,
+      iframe_url: validatedFields.data.iframe_url,
+    });
 
     revalidatePath('/live');
     revalidatePath('/admin/live');
@@ -66,13 +60,10 @@ export async function sendChatMessage(message: string) {
   }
 
   try {
-    const { error } = await supabaseAdmin
-      .from('live_chat_messages')
-      // ---- CORRECCIÓN ----
-      // Se inserta explícitamente el autor como "KX"
-      .insert({ message: validatedMessage.data.message, author: 'KX' });
-
-    if (error) throw error;
+    await createChatMessage({
+      message: validatedMessage.data.message,
+      author: 'KX'
+    });
     
     return { success: true };
 

@@ -7,7 +7,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { saveGalleryItem } from '@/app/admin/gallery/actions';
 import type { GalleryItem, RaceEvent } from "@/lib/types";
-import { supabase } from "@/lib/supabase-client";
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import {
   Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage
 } from "@/components/ui/form";
@@ -48,8 +48,6 @@ interface GalleryItemFormProps {
     events: RaceEvent[];
 }
 
-const BUCKET_NAME = 'kpx-images';
-
 export default function GalleryItemForm({ item, events }: GalleryItemFormProps) {
   const router = useRouter();
   const { toast } = useToast();
@@ -80,14 +78,14 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
     }
   };
 
-  const uploadFileToSupabase = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `gallery/${Date.now()}_${Math.random()}.${fileExt}`;
-    const { error, data } = await supabase.storage.from(BUCKET_NAME).upload(fileName, file);
-    if (error) throw error;
-    
-    const { data: { publicUrl } } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path);
-    return publicUrl;
+  const uploadFileToCloudinary = async (file: File): Promise<string> => {
+    try {
+      const url = await uploadToCloudinary(file, 'gallery');
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir el archivo');
+    }
   };
 
   async function onSubmit(data: FormValues) {
@@ -102,7 +100,7 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
     try {
       let imageUrl = item?.src;
       if (mediaFile) {
-        imageUrl = await uploadFileToSupabase(mediaFile);
+        imageUrl = await uploadFileToCloudinary(mediaFile);
       }
       
        const payload = {

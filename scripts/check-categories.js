@@ -1,102 +1,74 @@
-const { createClient } = require('@supabase/supabase-js');
+const { initializeApp } = require('firebase/app');
+const { getFirestore, collection, getDocs, doc, getDoc } = require('firebase/firestore');
 require('dotenv').config({ path: '.env.local' });
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
+const firebaseConfig = {
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+};
 
-const CATEGORIES = [
-  { name: '100cc JUNIOR', description: 'Categoría para pilotos junior con motores de 100cc' },
-  { name: '125cc PROFESIONAL', description: 'Categoría profesional con motores de 125cc' },
-  { name: 'BABY KART', description: 'Categoría para los más pequeños' },
-  { name: 'F200 STANDARD', description: 'Categoría F200 estándar' },
-  { name: 'F200 SUPER', description: 'Categoría F200 super' },
-  { name: 'F200 MASTER', description: 'Categoría F200 master' },
-  { name: 'INFANTIL 65', description: 'Categoría infantil con motores de 65cc' },
-  { name: 'MASTER X30', description: 'Categoría Master X30' },
-  { name: 'MINI 60', description: 'Categoría mini con motores de 60cc' },
-  { name: 'PROFESIONAL T35', description: 'Categoría profesional T35' },
-  { name: 'VORTEX 100', description: 'Categoría Vortex 100' },
-  { name: 'F390', description: 'Categoría F390' },
-  { name: 'PROMOCIONAL', description: 'Categoría promocional para nuevos pilotos' }
-];
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-async function checkAndCreateCategories() {
-  console.log('Verificando categorías existentes...');
-  
-  // Obtener categorías existentes
-  const { data: existingCategories, error: fetchError } = await supabase
-    .from('categories')
-    .select('name');
+async function checkCategories() {
+  try {
+    console.log('🔍 Verificando categorías en Firebase...\n');
     
-  if (fetchError) {
-    console.error('Error al obtener categorías:', fetchError);
-    return;
-  }
-  
-  const existingNames = new Set(existingCategories.map(cat => cat.name));
-  console.log('Categorías existentes:', Array.from(existingNames));
-  
-  // Crear categorías faltantes
-  const missingCategories = CATEGORIES.filter(cat => !existingNames.has(cat.name));
-  
-  if (missingCategories.length === 0) {
-    console.log('✅ Todas las categorías ya existen');
-    return;
-  }
-  
-  console.log('Creando categorías faltantes:', missingCategories.map(c => c.name));
-  
-  const { error: insertError } = await supabase
-    .from('categories')
-    .insert(missingCategories);
+    // Obtener todas las categorías
+    const categoriesSnapshot = await getDocs(collection(db, 'categories'));
+    console.log(`📊 Total de categorías: ${categoriesSnapshot.size}`);
     
-  if (insertError) {
-    console.error('Error al crear categorías:', insertError);
-  } else {
-    console.log('✅ Categorías creadas exitosamente');
-  }
-  
-  // Verificar pilotos sin categoría válida
-  console.log('\nVerificando pilotos...');
-  const { data: pilots, error: pilotsError } = await supabase
-    .from('pilots')
-    .select('id, firstName, lastName, category');
-    
-  if (pilotsError) {
-    console.error('Error al obtener pilotos:', pilotsError);
-    return;
-  }
-  
-  // Obtener todas las categorías actualizadas
-  const { data: allCategories, error: categoriesError } = await supabase
-    .from('categories')
-    .select('id, name');
-    
-  if (categoriesError) {
-    console.error('Error al obtener categorías actualizadas:', categoriesError);
-    return;
-  }
-  
-  const categoryMap = new Map(allCategories.map(c => [c.id, c.name]));
-  const nameToIdMap = new Map(allCategories.map(c => [c.name, c.id]));
-  
-  console.log('Mapa de categorías:', Object.fromEntries(categoryMap));
-  
-  const pilotsWithIssues = pilots.filter(pilot => {
-    if (!pilot.category) return true;
-    return !categoryMap.has(pilot.category);
-  });
-  
-  if (pilotsWithIssues.length > 0) {
-    console.log('\n⚠️ Pilotos con problemas de categoría:');
-    pilotsWithIssues.forEach(pilot => {
-      console.log(`- ${pilot.firstName} ${pilot.lastName}: categoría="${pilot.category}"`);
+    const categories = [];
+    categoriesSnapshot.forEach(doc => {
+      const data = { id: doc.id, ...doc.data() };
+      categories.push(data);
+      console.log(`  - ${data.name} (ID: ${data.id})`);
     });
-  } else {
-    console.log('✅ Todos los pilotos tienen categorías válidas');
+    
+    console.log('\n🏁 Verificando pilotos y sus categorías...\n');
+    
+    // Obtener todos los pilotos
+    const pilotsSnapshot = await getDocs(collection(db, 'pilots'));
+    console.log(`👨‍🏁 Total de pilotos: ${pilotsSnapshot.size}`);
+    
+    const pilotCategories = new Set();
+    
+    for (const pilotDoc of pilotsSnapshot.docs) {
+      const pilotData = { id: pilotDoc.id, ...pilotDoc.data() };
+      
+      console.log(`\n👤 Piloto: ${pilotData.firstName} ${pilotData.lastName}`);
+      console.log(`   - category: ${pilotData.category || 'No definida'}`);
+      console.log(`   - category_id: ${pilotData.category_id || 'No definida'}`);
+      
+      if (pilotData.category_id) {
+        // Verificar si la categoría existe
+        const categoryDoc = await getDoc(doc(db, 'categories', pilotData.category_id));
+        if (categoryDoc.exists()) {
+          const categoryData = categoryDoc.data();
+          console.log(`   - Categoría encontrada: ${categoryData.name}`);
+          pilotCategories.add(categoryData.name);
+        } else {
+          console.log(`   - ⚠️  Categoría no encontrada para ID: ${pilotData.category_id}`);
+        }
+      }
+      
+      if (pilotData.category) {
+        pilotCategories.add(pilotData.category);
+      }
+    }
+    
+    console.log('\n📋 Resumen de categorías encontradas en pilotos:');
+    Array.from(pilotCategories).sort().forEach(cat => {
+      console.log(`  - ${cat}`);
+    });
+    
+  } catch (error) {
+    console.error('❌ Error:', error);
   }
 }
 
-checkAndCreateCategories().catch(console.error);
+checkCategories();

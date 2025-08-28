@@ -3,25 +3,14 @@ import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import type { TrackInfo } from '@/lib/types';
 import TrackListClient from '@/components/admin/TrackListClient';
-import { createClient } from '@supabase/supabase-js';
-
-// Usamos la clave de servicio para tener acceso garantizado en el entorno de admin
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getAllTracks } from '@/lib/data-service';
 
 async function getTracks() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('tracks')
-      .select('id, name, location, record')
-      .order('name', { ascending: true });
-
-    if (error) throw error;
-    return (data as Partial<TrackInfo>[]) || [];
+    const tracks = await getAllTracks();
+    return (tracks as Partial<TrackInfo>[]) || [];
   } catch (error) {
-    console.error("Error fetching tracks for admin:", error);
+    console.error("Error fetching tracks for admin from Firebase:", error);
     return [];
   }
 }

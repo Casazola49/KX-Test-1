@@ -15,7 +15,7 @@ import {
   Monitor,
   MessageSquare
 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+// Migrado a Firebase - ya no usa Supabase
 
 interface DiagnosticResult {
   name: string;
@@ -28,28 +28,24 @@ export default function LiveTroubleshooting() {
   const [diagnostics, setDiagnostics] = useState<DiagnosticResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
   const runDiagnostics = async () => {
     setIsRunning(true);
     const results: DiagnosticResult[] = [];
 
     try {
-      // Test 1: Conexión a Supabase
+      // Test 1: Conexión a Firebase
       try {
-        const { data, error } = await supabase.from('live_stream').select('count').single();
+        const { getLiveStreamConfig } = await import('@/lib/data-service');
+        await getLiveStreamConfig();
         results.push({
-          name: 'Conexión a Supabase',
-          status: error ? 'error' : 'success',
-          message: error ? 'Error de conexión' : 'Conexión exitosa',
-          details: error?.message
+          name: 'Conexión a Firebase',
+          status: 'success',
+          message: 'Conexión exitosa',
+          details: 'Firebase conectado correctamente'
         });
       } catch (err) {
         results.push({
-          name: 'Conexión a Supabase',
+          name: 'Conexión a Firebase',
           status: 'error',
           message: 'Error de conexión',
           details: err instanceof Error ? err.message : 'Error desconocido'
@@ -58,17 +54,15 @@ export default function LiveTroubleshooting() {
 
       // Test 2: Configuración del stream
       try {
-        const { data: streamConfig, error } = await supabase
-          .from('live_stream')
-          .select('*')
-          .single();
+        const { getLiveStreamConfig } = await import('@/lib/data-service');
+        const streamConfig = await getLiveStreamConfig();
 
-        if (error) {
+        if (!streamConfig) {
           results.push({
             name: 'Configuración del Stream',
-            status: 'error',
-            message: 'No se pudo obtener la configuración',
-            details: error.message
+            status: 'warning',
+            message: 'No se encontró configuración',
+            details: 'Se usarán valores por defecto'
           });
         } else {
           results.push({
@@ -87,80 +81,42 @@ export default function LiveTroubleshooting() {
         });
       }
 
-      // Test 3: Tabla de mensajes
+      // Test 3: Mensajes de chat
       try {
-        const { data: messages, error } = await supabase
-          .from('live_chat_messages')
-          .select('*')
-          .limit(1);
-
+        const { getChatMessages } = await import('@/lib/data-service');
+        await getChatMessages();
         results.push({
-          name: 'Tabla de Mensajes',
-          status: error ? 'error' : 'success',
-          message: error ? 'Error al acceder a mensajes' : 'Acceso exitoso',
-          details: error?.message || `Tabla accesible`
+          name: 'Mensajes de Chat',
+          status: 'success',
+          message: 'Acceso exitoso',
+          details: 'Colección de mensajes accesible'
         });
       } catch (err) {
         results.push({
-          name: 'Tabla de Mensajes',
+          name: 'Mensajes de Chat',
           status: 'error',
           message: 'Error al verificar mensajes',
           details: err instanceof Error ? err.message : 'Error desconocido'
         });
       }
 
-      // Test 4: Conexión en tiempo real
-      try {
-        const channel = supabase.channel('diagnostic_test');
-        let realtimeStatus: 'success' | 'error' = 'error';
-        let realtimeMessage = 'Timeout de conexión';
-
-        const timeout = setTimeout(() => {
-          results.push({
-            name: 'Conexión en Tiempo Real',
-            status: realtimeStatus,
-            message: realtimeMessage,
-            details: 'La conexión tardó más de 5 segundos'
-          });
-        }, 5000);
-
-        channel.subscribe((status) => {
-          clearTimeout(timeout);
-          if (status === 'SUBSCRIBED') {
-            realtimeStatus = 'success';
-            realtimeMessage = 'Conexión en tiempo real exitosa';
-          } else {
-            realtimeStatus = 'error';
-            realtimeMessage = `Estado: ${status}`;
-          }
-          
-          results.push({
-            name: 'Conexión en Tiempo Real',
-            status: realtimeStatus,
-            message: realtimeMessage,
-            details: `Estado de suscripción: ${status}`
-          });
-
-          supabase.removeChannel(channel);
-        });
-      } catch (err) {
-        results.push({
-          name: 'Conexión en Tiempo Real',
-          status: 'error',
-          message: 'Error al probar conexión en tiempo real',
-          details: err instanceof Error ? err.message : 'Error desconocido'
-        });
-      }
-
-      // Test 5: Variables de entorno
-      const hasSupabaseUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const hasSupabaseKey = !!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+      // Test 4: Variables de entorno Firebase
+      const hasFirebaseConfig = !!process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
+      const hasFirebaseApiKey = !!process.env.NEXT_PUBLIC_FIREBASE_API_KEY;
 
       results.push({
-        name: 'Variables de Entorno',
-        status: hasSupabaseUrl && hasSupabaseKey ? 'success' : 'error',
-        message: hasSupabaseUrl && hasSupabaseKey ? 'Variables configuradas' : 'Variables faltantes',
-        details: `URL: ${hasSupabaseUrl ? '✓' : '✗'}, Key: ${hasSupabaseKey ? '✓' : '✗'}`
+        name: 'Variables de Entorno Firebase',
+        status: hasFirebaseConfig && hasFirebaseApiKey ? 'success' : 'error',
+        message: hasFirebaseConfig && hasFirebaseApiKey ? 'Variables configuradas' : 'Variables faltantes',
+        details: `Project ID: ${hasFirebaseConfig ? '✓' : '✗'}, API Key: ${hasFirebaseApiKey ? '✓' : '✗'}`
+      });
+
+      // Test 5: Funcionalidad simplificada
+      results.push({
+        name: 'Tiempo Real',
+        status: 'warning',
+        message: 'Modo simplificado activo',
+        details: 'Usando polling en lugar de tiempo real (migración completa)'
       });
 
     } catch (error) {
@@ -287,7 +243,7 @@ export default function LiveTroubleshooting() {
               <AlertTriangle className="h-4 w-4 text-red-600" />
               <div className="ml-3">
                 <div className="text-sm text-red-800">
-                  Se encontraron {errorCount} error(es). Revisa la configuración de Supabase y las variables de entorno.
+                  Se encontraron {errorCount} error(es). Revisa la configuración de Firebase y las variables de entorno.
                   Si los problemas persisten, contacta al administrador del sistema.
                 </div>
               </div>

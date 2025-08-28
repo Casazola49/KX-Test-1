@@ -1,28 +1,23 @@
 
 import Link from 'next/link';
-import { createClient } from '@supabase/supabase-js';
 import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PlusCircle } from 'lucide-react';
 import type { Kart } from '@/lib/types';
-import KartList from '@/components/admin/KartList'; // Importamos el nuevo componente cliente
+import KartList from '@/components/admin/KartList';
+import { getAllKarts } from '@/lib/data-service';
 
-// Cliente de Supabase para el servidor
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
-
-// Función de servidor para obtener los karts
+// Función de servidor para obtener los karts desde Firebase
 async function getKarts(): Promise<Kart[]> {
-  const { data, error } = await supabase.from('karts').select('*').order('created_at', { ascending: false });
-  if (error) {
+  try {
+    const karts = await getAllKarts();
+    return karts || [];
+  } catch (error) {
     console.error('Error fetching karts:', error);
     return [];
   }
-  return data;
 }
 
 // La página ahora es un Componente de Servidor puro

@@ -3,13 +3,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
-
-// Use the service role key for admin actions to bypass RLS policies.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createNews, updateNews, deleteNews as deleteNewsFromFirebase } from '@/lib/data-service';
 
 const NewsActionSchema = z.object({
   id: z.string().optional(),
@@ -35,26 +29,25 @@ export async function saveNews(data: z.infer<typeof NewsActionSchema>) {
         .map(line => `<p>${line.trim()}</p>`)
         .join('');
 
-    // Use camelCase for Supabase payload to match DB schema
+    // Prepare payload for Firebase
     const articlePayload = {
-      ...newsData,
+      title: newsData.title,
+      slug: newsData.slug,
+      summary: newsData.summary,
+      category: newsData.category,
+      imageUrl: newsData.imageUrl,
+      galleryImageUrls: newsData.galleryImageUrls || [],
       content: formattedContent,
-      galleryImageUrls: newsData.galleryImageUrls || [], // Ensure it's an array
-      isMain: isMain, 
+      isMain: isMain,
+      date: new Date(),
     };
 
     if (id) {
       // Update existing document
-      const { error } = await supabaseAdmin.from('news').update(articlePayload).eq('id', id);
-      if (error) throw error;
+      await updateNews(id, articlePayload);
     } else {
       // Add new document
-      const payloadWithDate = {
-        ...articlePayload,
-        date: new Date().toISOString(),
-      };
-      const { error } = await supabaseAdmin.from('news').insert(payloadWithDate);
-      if (error) throw error;
+      await createNews(articlePayload);
     }
   
     // Revalidate paths to reflect changes immediately
@@ -82,8 +75,7 @@ export async function deleteNews(id: string) {
     try {
         if (!id) throw new Error("ID de noticia no proporcionado.");
         
-        const { error } = await supabaseAdmin.from('news').delete().eq('id', id);
-        if (error) throw error;
+        await deleteNewsFromFirebase(id);
         
         revalidatePath('/', 'layout');
         revalidatePath('/noticias');

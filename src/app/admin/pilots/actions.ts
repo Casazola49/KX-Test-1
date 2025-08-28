@@ -3,14 +3,8 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
+import { createPilot as createPilotFirebase, updatePilot as updatePilotFirebase, deletePilot as deletePilotFirebase, getPilotBySlug, getAllCategories } from '@/lib/data-service';
 import type { Pilot } from '@/lib/types';
-
-// Use the service role key for admin actions to bypass RLS policies.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
 
 // Unified schema for data validation from the form
 const PilotFormSchema = z.object({

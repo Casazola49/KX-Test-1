@@ -1,7 +1,7 @@
 
 import type { TrackInfo, RaceEvent } from '@/lib/types';
 import { notFound } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getTrackById, getEventsByTrackId } from '@/lib/data-service';
 import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
@@ -14,59 +14,30 @@ import ImageGallery from '@/components/client/ImageGallery'; // Importamos el nu
 
 export const dynamic = 'force-dynamic';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 async function getTrackDetails(id: string): Promise<{ track: TrackInfo | null, events: RaceEvent[] }> {
-    console.log('🔍 Buscando pista con ID:', id);
-    
-    const { data: track, error: trackError } = await supabase
-        .from('tracks')
-        .select('*')
-        .eq('id', id)
-        .single();
-    
-    if (trackError) {
-        console.error("❌ Error fetching track:", trackError);
+    try {
+        console.log('🔍 Buscando pista con ID:', id);
+        
+        const track = await getTrackById(id);
+        if (!track) {
+            console.log('❌ Pista no encontrada');
+            return { track: null, events: [] };
+        }
+
+        console.log('✅ Pista encontrada:', track.name);
+
+        // Buscar eventos para esta pista
+        console.log('🔍 Buscando eventos para track_id:', id);
+        const events = await getEventsByTrackId(id);
+        
+        console.log('📊 Eventos encontrados:', events.length);
+        console.log('✅ Eventos procesados:', events.map(e => ({ name: e.name, date: e.event_date })));
+
+        return { track, events };
+    } catch (error) {
+        console.error("❌ Error fetching track details from Firebase:", error);
         return { track: null, events: [] };
     }
-
-    console.log('✅ Pista encontrada:', track?.name);
-
-    let events: RaceEvent[] = [];
-    if (track) {
-      console.log('🔍 Buscando eventos para track_id:', id);
-      
-      // Buscar eventos por track_id
-      const { data: eventData, error: eventError } = await supabase
-        .from('events')
-        .select('*')
-        .eq('track_id', id)
-        .order('event_date', { ascending: false });
-
-      if (eventError) {
-        console.error("❌ Error fetching events:", eventError);
-      } else {
-        console.log('📊 Eventos encontrados:', eventData?.length || 0);
-        console.log('📋 Datos de eventos:', eventData);
-        
-        if (eventData && eventData.length > 0) {
-          events = eventData.map(e => ({
-            id: e.id,
-            name: e.name,
-            date: e.event_date, // Usar event_date en lugar de date
-            trackName: track.name,
-            track: track
-          })) as RaceEvent[];
-          
-          console.log('✅ Eventos procesados:', events.map(e => ({ name: e.name, date: e.date })));
-        }
-      }
-    }
-
-    return { track: track as TrackInfo | null, events };
 }
 
 const DetailItem: React.FC<{ icon: React.ElementType, label: string, value?: string | number | null }> = ({ icon: Icon, label, value }) => {

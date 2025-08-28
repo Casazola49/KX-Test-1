@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
+import { createProduct, updateProduct, deleteProduct as deleteProductFromFirebase } from '@/lib/data-service';
 
 const ProductSchema = z.object({
   id: z.string().uuid().optional().or(z.literal('')),
@@ -27,10 +27,7 @@ export type ProductFormState = {
   success: boolean;
 };
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Removed supabaseAdmin - now using Firebase data-service
 
 export async function saveProduct(
   prevState: ProductFormState,
@@ -83,12 +80,12 @@ export async function saveProduct(
 
     if (id) {
       // Update
-      const { error } = await supabaseAdmin.from('products').update(payload).eq('id', id);
-      if (error) throw new Error(error.message);
+      const result = await updateProduct(id, payload);
+      if (!result.success) throw new Error(result.error);
     } else {
       // Create
-      const { error } = await supabaseAdmin.from('products').insert(payload);
-      if (error) throw new Error(error.message);
+      const result = await createProduct(payload);
+      if (!result.success) throw new Error(result.error);
     }
     
     revalidatePath('/equipamiento-servicios');
@@ -106,8 +103,8 @@ export async function deleteProduct(id: string) {
     try {
         if (!id) throw new Error("ID de producto no proporcionado.");
         
-        const { error } = await supabaseAdmin.from('products').delete().eq('id', id);
-        if (error) throw error;
+        const result = await deleteProductFromFirebase(id);
+        if (!result.success) throw new Error(result.error);
         
         revalidatePath('/admin/products');
         revalidatePath('/equipamiento-servicios');

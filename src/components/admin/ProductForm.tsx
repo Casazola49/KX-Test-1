@@ -18,8 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, UploadCloud, ImagePlus } from 'lucide-react';
 import Image from 'next/image';
-import { createClient } from '@supabase/supabase-js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 interface Product {
   id?: string;
@@ -69,11 +69,6 @@ export default function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [galleryImageFiles, setGalleryImageFiles] = useState<File[]>([]);
@@ -112,12 +107,14 @@ export default function ProductForm({ product }: ProductFormProps) {
     }
   }, [state, toast, router]);
   
-  const uploadFile = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `product-images/${Date.now()}_${Math.random()}.${fileExt}`;
-    const { error, data } = await supabase.storage.from('kpx-images').upload(fileName, file);
-    if (error) throw error;
-    return supabase.storage.from('kpx-images').getPublicUrl(data.path).data.publicUrl;
+  const uploadFile = async (file: File, folder: string): Promise<string> => {
+    try {
+      const url = await uploadToCloudinary(file, folder);
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir el archivo');
+    }
   };
 
   const handleFormSubmit = async (data: FormValues) => {
@@ -127,13 +124,13 @@ export default function ProductForm({ product }: ProductFormProps) {
     try {
       let mainImageUrl = product?.image_url;
       if (mainImageFile) {
-        mainImageUrl = await uploadFile(mainImageFile);
+        mainImageUrl = await uploadFile(mainImageFile, 'product-images');
       }
       if (!mainImageUrl) throw new Error("La imagen principal es obligatoria.");
 
       let galleryImageUrls = product?.gallery_image_urls || [];
       if (galleryImageFiles.length > 0) {
-        galleryImageUrls = await Promise.all(galleryImageFiles.map(file => uploadFile(file)));
+        galleryImageUrls = await Promise.all(galleryImageFiles.map(file => uploadFile(file, 'product-gallery')));
       }
 
       const formData = new FormData(formRef.current!);

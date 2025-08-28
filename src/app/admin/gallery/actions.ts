@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { supabaseAdmin } from '@/lib/supabase-admin';
+import { createGalleryItem, updateGalleryItem, deleteGalleryItem as deleteGalleryItemFromDB, getGalleryItemById } from '@/lib/data-service';
 
 // Esquema actualizado: sin 'slug' (la tabla no lo tiene) y con 'type' por defecto 'image'
 const GalleryActionSchema = z.object({
@@ -24,24 +24,24 @@ export async function saveGalleryItem(data: any) {
       ...itemData,
       type: itemData.type ?? 'image',
       alt: (itemData.alt && itemData.alt.trim().length > 0) ? itemData.alt : itemData.title,
+      category: itemData.category || 'general', // Agregar categoría por defecto
     } as any;
 
-    const { error } = await supabaseAdmin
-      .from('gallery')
-      .upsert(id ? { ...itemToSave, id } : itemToSave);
-
-    if (error) {
-        console.error("Supabase Error:", error.message);
-        throw new Error(`Error de base de datos: ${error.message}`);
+    let result;
+    if (id) {
+      // Actualizar elemento existente
+      await updateGalleryItem(id, itemToSave);
+      result = { success: true, message: 'Elemento actualizado con éxito.' };
+    } else {
+      // Crear nuevo elemento
+      const newId = await createGalleryItem(itemToSave);
+      result = { success: true, message: 'Elemento añadido a la galería.', id: newId };
     }
   
     revalidatePath('/galeria');
     revalidatePath('/admin/gallery');
     
-    return { 
-      success: true, 
-      message: id ? 'Elemento actualizado con éxito.' : 'Elemento añadido a la galería.' 
-    };
+    return result;
 
   } catch (error: any) {
     console.error('Error al guardar el elemento de galería:', error);
@@ -57,21 +57,21 @@ export async function deleteGalleryItem(id: string) {
     try {
         if (!id) throw new Error("ID de elemento no proporcionado.");
         
-        const { data: item, error: fetchError } = await supabaseAdmin.from('gallery').select('src').eq('id', id).single();
-        if (fetchError) {
-          console.warn("No se pudo obtener el item para borrar la imagen, se procederá a borrar de la BD:", fetchError.message);
-        }
-
-        if (item && item.src) {
-            const filePath = new URL(item.src).pathname.split('/kpx-images/')[1];
-            if (filePath) {
-              const { error: storageError } = await supabaseAdmin.storage.from('kpx-images').remove([filePath]);
-              if (storageError) console.error("Error al borrar imagen del storage:", storageError.message);
-            }
+        // Obtener el elemento para verificar si tiene imagen en Cloudinary
+        try {
+          const item = await getGalleryItemById(id);
+          
+          if (item && item.src) {
+            // Si la imagen está en Cloudinary, podríamos eliminarla aquí
+            // Por ahora solo registramos que se va a eliminar
+            console.log('Eliminando elemento con imagen:', item.src);
+          }
+        } catch (fetchError) {
+          console.warn("No se pudo obtener el item para verificar la imagen:", fetchError);
         }
         
-        const { error: deleteError } = await supabaseAdmin.from('gallery').delete().eq('id', id);
-        if (deleteError) throw deleteError;
+        // Eliminar de Firebase
+        await deleteGalleryItemFromDB(id);
         
         revalidatePath('/galeria');
         revalidatePath('/admin/gallery');

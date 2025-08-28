@@ -8,7 +8,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import AdBanner from '@/components/shared/AdBanner';
 import { GalleryImage } from '@/lib/types';
 import Section from '@/components/shared/Section';
-import { supabase } from '@/lib/supabase-client';
+import { getGalleryByType } from '@/lib/data-service';
 
 export default function HomeGalleryClient() {
   const [images, setImages] = useState<GalleryImage[]>([]);
@@ -22,25 +22,18 @@ export default function HomeGalleryClient() {
       try {
         setIsLoading(true);
         
-        const { data, error } = await supabase
-          .from('gallery')
-          .select('*')
-          .eq('type', 'image') // Cambiado de 'foto' a 'image'
-          .order('created_at', { ascending: false })
-          .limit(6);
-
-        if (error) {
-          console.error('Error fetching gallery images:', error);
-          return;
-        }
-
-        if (data && data.length > 0) {
-          const processedImages: GalleryImage[] = data.map((item: any) => ({
+        const galleryData = await getGalleryByType('image');
+        
+        if (galleryData && galleryData.length > 0) {
+          // Tomar solo las primeras 6 imágenes
+          const limitedData = galleryData.slice(0, 6);
+          
+          const processedImages: GalleryImage[] = limitedData.map((item: any) => ({
             id: item.id,
             title: item.title || 'Sin título',
             description: item.description || item.alt || '',
             image_url: item.src,
-            created_at: item.created_at
+            created_at: item.createdAt
           }));
 
           // Debug: Log para ver las URLs de las imágenes

@@ -1,8 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getStorage } from "firebase/storage";
-import { getAuth } from "firebase/auth";
+import { getFirestore, connectFirestoreEmulator } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
 
 // Your web app's Firebase configuration is loaded from .env.local
 const firebaseConfig = {
@@ -18,7 +17,28 @@ const firebaseConfig = {
 // Check if the app is already initialized to prevent errors
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
-const storage = getStorage(app);
-const auth = getAuth(app); // Re-enabled auth initialization
+const auth = getAuth(app);
 
-export { app, db, storage, auth };
+// Connect to emulators in development (opcional)
+if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+  // Solo conectar si no está ya conectado
+  try {
+    // connectFirestoreEmulator(db, 'localhost', 8080);
+    // connectAuthEmulator(auth, 'http://localhost:9099');
+  } catch (error) {
+    // Emulators already connected
+  }
+}
+
+export { app, db, auth };
+
+// Utilidades comunes para Firestore
+export const collections = {
+  users: 'users',
+  posts: 'posts',
+  categories: 'categories',
+  races: 'races',
+  pilots: 'pilots',
+  teams: 'teams',
+  comments: 'comments'
+} as const;
