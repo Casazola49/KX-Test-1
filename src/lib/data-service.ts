@@ -231,25 +231,57 @@ export async function getGalleryItemById(id: string): Promise<GalleryItem | null
 
 // OPERACIONES DE ESCRITURA (para admin)
 export async function createPilot(pilotData: Omit<Pilot, 'id' | 'createdAt' | 'updatedAt'>) {
-  const docRef = await addDoc(collection(db, COLLECTIONS.PILOTS), {
-    ...pilotData,
-    createdAt: Timestamp.now(),
-    updatedAt: Timestamp.now()
-  });
-  return docRef.id;
+  try {
+    const docRef = await addDoc(collection(db, COLLECTIONS.PILOTS), {
+      ...pilotData,
+      createdAt: Timestamp.now(),
+      updatedAt: Timestamp.now()
+    });
+    return { success: true, id: docRef.id };
+  } catch (error: any) {
+    console.error('Error creating pilot:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 export async function updatePilot(id: string, pilotData: Partial<Pilot>) {
-  const docRef = doc(db, COLLECTIONS.PILOTS, id);
-  await updateDoc(docRef, {
-    ...pilotData,
-    updatedAt: Timestamp.now()
-  });
+  try {
+    const docRef = doc(db, COLLECTIONS.PILOTS, id);
+    await updateDoc(docRef, {
+      ...pilotData,
+      updatedAt: Timestamp.now()
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error updating pilot:', error);
+    return { success: false, error: error.message };
+  }
 }
 
 export async function deletePilot(id: string) {
-  const docRef = doc(db, COLLECTIONS.PILOTS, id);
-  await deleteDoc(docRef);
+  try {
+    const docRef = doc(db, COLLECTIONS.PILOTS, id);
+    await deleteDoc(docRef);
+    return { success: true };
+  } catch (error: any) {
+    console.error('Error deleting pilot:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+export async function getPilotById(id: string): Promise<Pilot | null> {
+  try {
+    const docRef = doc(db, COLLECTIONS.PILOTS, id);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting pilot by ID:', error);
+    return null;
+  }
 }
 
 // OPERACIONES DE MECÁNICOS
@@ -622,9 +654,9 @@ export async function createEventWithPodiums(eventData: any, podiums: any[]) {
     }
     
     return { success: true, eventId };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating event with podiums:', error);
-    throw error;
+    return { success: false, error: error.message || 'Error desconocido al crear el evento' };
   }
 }
 
@@ -646,9 +678,9 @@ export async function updateEventWithPodiums(eventId: string, eventData: any, po
     }
     
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error updating event with podiums:', error);
-    throw error;
+    return { success: false, error: error.message || 'Error desconocido al actualizar el evento' };
   }
 }
 
@@ -662,9 +694,9 @@ export async function deleteEventWithPodiums(eventId: string) {
     await deleteDoc(eventRef);
     
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting event with podiums:', error);
-    throw error;
+    return { success: false, error: error.message || 'Error desconocido al eliminar el evento' };
   }
 }
 
@@ -920,68 +952,18 @@ export async function updateLiveStreamConfig(configData: any) {
   }
 }
 
-// STANDINGS - Funciones para clasificaciones
-export async function getStandingsByType(type: 'points' | 'time_trial') {
-  try {
-    const snapshot = await getDocs(
-      query(
-        collection(db, COLLECTIONS.STANDINGS),
-        where('type', '==', type),
-        orderBy('points', 'desc')
-      )
-    );
-    
-    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
-  } catch (error) {
-    console.error(`Error fetching ${type} standings:`, error);
-    return [];
-  }
-}
 
-export async function createStanding(standingData: any) {
-  try {
-    const docRef = await addDoc(collection(db, COLLECTIONS.STANDINGS), {
-      ...standingData,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
-    });
-    return { success: true, id: docRef.id };
-  } catch (error) {
-    console.error('Error creating standing:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-export async function updateStanding(id: string, standingData: any) {
-  try {
-    const docRef = doc(db, COLLECTIONS.STANDINGS, id);
-    await updateDoc(docRef, {
-      ...standingData,
-      updatedAt: Timestamp.now()
-    });
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating standing:', error);
-    return { success: false, error: error.message };
-  }
-}
-
-export async function deleteStanding(id: string) {
-  try {
-    const docRef = doc(db, COLLECTIONS.STANDINGS, id);
-    await deleteDoc(docRef);
-    return { success: true };
-  } catch (error) {
-    console.error('Error deleting standing:', error);
-    return { success: false, error: error.message };
-  }
-}
 
 // PRODUCTOS - Funciones para productos
 export async function createProduct(productData: any) {
   try {
+    // Filtrar valores undefined para Firebase
+    const cleanData = Object.fromEntries(
+      Object.entries(productData).filter(([_, value]) => value !== undefined)
+    );
+    
     const docRef = await addDoc(collection(db, COLLECTIONS.PRODUCTS), {
-      ...productData,
+      ...cleanData,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now()
     });
@@ -994,9 +976,14 @@ export async function createProduct(productData: any) {
 
 export async function updateProduct(id: string, productData: any) {
   try {
+    // Filtrar valores undefined para Firebase
+    const cleanData = Object.fromEntries(
+      Object.entries(productData).filter(([_, value]) => value !== undefined)
+    );
+    
     const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
     await updateDoc(docRef, {
-      ...productData,
+      ...cleanData,
       updatedAt: Timestamp.now()
     });
     return { success: true };
@@ -1154,3 +1141,4 @@ export async function getProductById(id: string) {
     return null;
   }
 }
+

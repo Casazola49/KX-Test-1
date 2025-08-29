@@ -25,7 +25,7 @@ export const COLLECTIONS = {
   AUSPICIOS: 'auspicios',
   TEAMS: 'teams',
   USERS: 'users',
-  STANDINGS: 'standings',
+
   
   // Live streaming
   LIVE_STREAMS: 'live_streams',

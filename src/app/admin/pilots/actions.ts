@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { createPilot as createPilotFirebase, updatePilot as updatePilotFirebase, deletePilot as deletePilotFirebase, getPilotBySlug, getAllCategories } from '@/lib/data-service';
+import { createPilot as createPilotFirebase, updatePilot as updatePilotFirebase, deletePilot as deletePilotFirebase, getPilotBySlug, getAllCategories, getPilotById as getPilotByIdFirebase } from '@/lib/data-service';
 import type { Pilot } from '@/lib/types';
 
 // Unified schema for data validation from the form
@@ -32,23 +32,24 @@ const PilotFormSchema = z.object({
   model_3d_url: z.string().url().optional().nullable(),
 });
 
-
-// Helper function to get category ID from its name
+// Helper function to get category ID from its name using Firebase
 async function getCategoryIdByName(categoryName: string): Promise<string | null> {
     if (!categoryName) return null;
     
-    const { data, error } = await supabaseAdmin
-        .from('categories')
-        .select('id')
-        .eq('name', categoryName)
-        .single();
+    try {
+        const categories = await getAllCategories();
+        const category = categories.find(cat => cat.name === categoryName);
+        
+        if (!category) {
+            console.error(`Could not find category with name "${categoryName}"`);
+            return null;
+        }
 
-    if (error || !data) {
-        console.error(`Could not find category with name "${categoryName}":`, error);
+        return category.id;
+    } catch (error) {
+        console.error(`Error fetching categories:`, error);
         return null;
     }
-
-    return data.id;
 }
 
 
@@ -72,8 +73,10 @@ export async function createPilot(data: PilotFormData) {
             performanceHistory: validatedData.performanceHistory || [],
         };
 
-        const { error } = await supabaseAdmin.from('pilots').insert(payload);
-        if (error) throw error;
+        const result = await createPilotFirebase(payload);
+        if (!result.success) {
+            throw new Error(result.error || 'Error al crear el piloto');
+        }
 
         revalidatePath('/pilotos-equipos');
         revalidatePath('/admin/pilots');
@@ -110,8 +113,10 @@ export async function updatePilot(id: string, data: PilotFormData) {
             performanceHistory: validatedData.performanceHistory || [],
         };
         
-        const { error } = await supabaseAdmin.from('pilots').update(payload).eq('id', id);
-        if (error) throw error;
+        const result = await updatePilotFirebase(id, payload);
+        if (!result.success) {
+            throw new Error(result.error || 'Error al actualizar el piloto');
+        }
         
         revalidatePath('/pilotos-equipos');
         revalidatePath('/admin/pilots');
@@ -137,19 +142,9 @@ export async function updatePilot(id: string, data: PilotFormData) {
 export async function getPilotById(id: string): Promise<Pilot | null> {
     if (!id) return null;
     try {
-        const { data, error } = await supabaseAdmin
-            .from('pilots')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) {
-            console.error(`Error fetching pilot with id ${id}:`, error);
-            return null;
-        }
-        return data as Pilot;
+        return await getPilotByIdFirebase(id);
     } catch (error) {
-        console.error('Catastrophic error fetching pilot:', error);
+        console.error('Error fetching pilot:', error);
         return null;
     }
 }
@@ -158,11 +153,10 @@ export async function deletePilot(id: string) {
     try {
         if (!id) throw new Error("ID de piloto no proporcionado.");
         
-        // Optional: clean up storage files, this logic is complex and can be kept as is.
-        // ... (código de borrado de imágenes se mantiene) ...
-
-        const { error: deleteError } = await supabaseAdmin.from('pilots').delete().eq('id', id);
-        if (deleteError) throw deleteError;
+        const result = await deletePilotFirebase(id);
+        if (!result.success) {
+            throw new Error(result.error || 'Error al eliminar el piloto');
+        }
         
         revalidatePath('/pilotos-equipos');
         revalidatePath('/admin/pilots');

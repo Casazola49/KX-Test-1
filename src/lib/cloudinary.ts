@@ -1,10 +1,10 @@
-// Función para subir archivos desde el cliente usando nuestra API route
+// Función para subir archivos usando la API route (solo cliente)
 export const uploadToCloudinary = async (file: File, folder: string): Promise<string> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('folder', folder);
-
   try {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('folder', folder);
+
     const response = await fetch('/api/upload', {
       method: 'POST',
       body: formData,

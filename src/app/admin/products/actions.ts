@@ -6,18 +6,19 @@ import { revalidatePath } from 'next/cache';
 import { createProduct, updateProduct, deleteProduct as deleteProductFromFirebase } from '@/lib/data-service';
 
 const ProductSchema = z.object({
-  id: z.string().uuid().optional().or(z.literal('')),
+  id: z.string().optional().or(z.literal('')),
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   slug: z.string().min(3, 'El slug debe tener al menos 3 caracteres.').regex(/^[a-z0-9-]+$/, 'El slug solo puede contener minúsculas, números y guiones.'),
   brand: z.string().optional(),
   summary: z.string().optional(),
   description: z.string().optional(),
-  price: z.coerce.number().min(0, "El precio no puede ser negativo.").optional().nullable(),
-  stock: z.coerce.number().min(0, "El stock no puede ser negativo.").optional().nullable(),
+  price: z.union([z.string(), z.null()]).optional().transform(val => val === '' || val === null || val === undefined ? null : Number(val)),
+  stock: z.union([z.string(), z.null()]).optional().transform(val => val === '' || val === null || val === undefined ? null : Number(val)),
   category: z.string().min(3, 'La categoría es requerida.'),
   subcategory: z.string().optional(),
   department: z.string().optional(),
   contactUrl: z.string().url().optional().or(z.literal('')),
+  websiteUrl: z.string().url().optional().or(z.literal('')),
   imageUrl: z.string().url('La URL de la imagen principal es obligatoria.'),
   galleryImageUrls: z.array(z.string().url()).optional(),
   specifications: z.record(z.string()).optional(),
@@ -39,6 +40,8 @@ export async function saveProduct(
   formData: FormData
 ): Promise<ProductFormState> {
 
+
+
   const validatedFields = ProductSchema.safeParse({
     id: formData.get('id') || undefined,
     name: formData.get('name'),
@@ -46,12 +49,13 @@ export async function saveProduct(
     brand: formData.get('brand'),
     summary: formData.get('summary'),
     description: formData.get('description'),
-    price: formData.get('price'),
-    stock: formData.get('stock'),
+    price: formData.get('price') || null,
+    stock: formData.get('stock') || null,
     category: formData.get('category'),
     subcategory: formData.get('subcategory'),
     department: formData.get('department'),
     contactUrl: formData.get('contactUrl'),
+    websiteUrl: formData.get('websiteUrl'),
     imageUrl: formData.get('imageUrl'),
     galleryImageUrls: JSON.parse(formData.get('galleryImageUrls') as string || '[]'),
     specifications: formData.get('specifications') ? JSON.parse(formData.get('specifications') as string) : undefined,
@@ -72,25 +76,43 @@ export async function saveProduct(
   const { id, ...productData } = validatedFields.data;
 
   try {
+    // Crear payload base
     const payload: any = {
         name: productData.name,
         slug: productData.slug,
-        brand: productData.brand,
-        summary: productData.summary,
-        description: productData.description,
-        price: productData.price,
-        stock: productData.stock || 0,
         category: productData.category,
-        subcategory: productData.subcategory,
-        department: productData.department === 'General' ? 'General' : productData.department,
-        contact_url: productData.contactUrl,
         image_url: productData.imageUrl,
-        gallery_images: productData.galleryImageUrls,
-        specifications: productData.specifications,
-        tags: productData.tags,
-        sponsor_level: productData.sponsorLevel,
-        is_featured: productData.isFeatured,
+        is_featured: productData.isFeatured || false,
     };
+
+    // Agregar campos opcionales solo si tienen valor
+    if (productData.brand) payload.brand = productData.brand;
+    if (productData.summary) payload.summary = productData.summary;
+    if (productData.description) payload.description = productData.description;
+    if (productData.subcategory) payload.subcategory = productData.subcategory;
+    if (productData.department) payload.department = productData.department;
+    if (productData.contactUrl) payload.contact_url = productData.contactUrl;
+    if (productData.websiteUrl) payload.website_url = productData.websiteUrl;
+    if (productData.sponsorLevel) payload.sponsor_level = productData.sponsorLevel;
+    
+    // Manejar price y stock (pueden ser null pero no undefined)
+    if (productData.price !== undefined) {
+      payload.price = productData.price === '' || productData.price === null ? null : productData.price;
+    }
+    if (productData.stock !== undefined) {
+      payload.stock = productData.stock === '' || productData.stock === null ? null : productData.stock;
+    }
+    
+    // Manejar arrays
+    if (productData.galleryImageUrls && productData.galleryImageUrls.length > 0) {
+      payload.gallery_images = productData.galleryImageUrls;
+    }
+    if (productData.tags && productData.tags.length > 0) {
+      payload.tags = productData.tags;
+    }
+    if (productData.specifications && Object.keys(productData.specifications).length > 0) {
+      payload.specifications = productData.specifications;
+    }
 
     if (id) {
       // Update

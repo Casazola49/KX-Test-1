@@ -194,18 +194,21 @@ export interface Product {
     name: string;
     description: string;
     summary: string;
-    price: number;
+    price?: number;
     image_url: string;
     gallery_images?: string[];
+    gallery_image_urls?: string[];
     category: string;
     subcategory?: string;
-    brand: string;
-    stock: number;
+    brand?: string;
+    stock?: number;
     is_featured: boolean;
     department: string;
     specifications?: { [key: string]: string };
     tags?: string[];
     sponsor_level?: 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONZE';
+    contact_url?: string;
+    website_url?: string;
     created_at?: string;
     updated_at?: string;
 }

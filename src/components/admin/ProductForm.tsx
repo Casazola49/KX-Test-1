@@ -51,9 +51,10 @@ const FormSchema = z.object({
   category: z.string().min(3, { message: 'La categoría es requerida.' }),
   subcategory: z.string().optional(),
   department: z.string().optional(),
-  price: z.coerce.number().min(0, "El precio no puede ser negativo.").optional(),
-  stock: z.coerce.number().min(0, "El stock no puede ser negativo.").optional(),
+  price: z.string().optional().transform(val => val === '' ? undefined : Number(val)),
+  stock: z.string().optional().transform(val => val === '' ? undefined : Number(val)),
   contactUrl: z.string().url({ message: "Por favor, introduce una URL válida." }).optional().or(z.literal('')),
+  websiteUrl: z.string().url({ message: "Por favor, introduce una URL válida." }).optional().or(z.literal('')),
   summary: z.string().optional(),
   description: z.string().optional(),
   specifications: z.string().optional(),
@@ -83,7 +84,7 @@ export default function ProductForm({ product }: ProductFormProps) {
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [galleryImageFiles, setGalleryImageFiles] = useState<File[]>([]);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(product?.image_url || null);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>(product?.gallery_image_urls || []);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>(product?.gallery_images || []);
   const [isUploading, setIsUploading] = useState(false);
 
   const initialState: ProductFormState = { message: '', success: false };
@@ -92,20 +93,21 @@ export default function ProductForm({ product }: ProductFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      id: product?.id,
+      id: product?.id || "",
       name: product?.name || "",
       slug: product?.slug || "",
       brand: product?.brand || "",
       summary: product?.summary || "",
       description: product?.description || "",
-      price: product?.price || undefined,
-      stock: product?.stock || undefined,
+      price: product?.price !== null && product?.price !== undefined ? product.price.toString() : "",
+      stock: product?.stock !== null && product?.stock !== undefined ? product.stock.toString() : "",
       category: product?.category || "",
       subcategory: product?.subcategory || "",
-      department: product?.department || "general",
+      department: product?.department || "General",
       contactUrl: product?.contact_url || "",
+      websiteUrl: product?.website_url || "",
       specifications: product?.specifications ? JSON.stringify(product.specifications, null, 2) : "",
-      tags: product?.tags ? product.tags.join(', ') : "",
+      tags: product?.tags && product.tags.length > 0 ? product.tags.join(', ') : "",
       sponsorLevel: product?.sponsor_level || undefined,
       isFeatured: product?.is_featured || false,
     },
@@ -143,7 +145,7 @@ export default function ProductForm({ product }: ProductFormProps) {
       }
       if (!mainImageUrl) throw new Error("La imagen principal es obligatoria.");
 
-      let galleryImageUrls = product?.gallery_image_urls || [];
+      let galleryImageUrls = product?.gallery_images || [];
       if (galleryImageFiles.length > 0) {
         galleryImageUrls = await Promise.all(galleryImageFiles.map(file => uploadFile(file, 'product-gallery')));
       }
@@ -154,6 +156,11 @@ export default function ProductForm({ product }: ProductFormProps) {
       
       if (data.department) {
         formData.set('department', data.department);
+      }
+
+      // ARREGLO: Agregar sponsor level explícitamente
+      if (data.sponsorLevel) {
+        formData.set('sponsorLevel', data.sponsorLevel);
       }
 
       // Procesar especificaciones JSON
@@ -186,6 +193,7 @@ export default function ProductForm({ product }: ProductFormProps) {
     <Form {...form}>
       <form ref={formRef} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
         <input type="hidden" name="id" value={product?.id || ''} />
+        <input type="hidden" name="sponsorLevel" value={form.watch('sponsorLevel') || ''} />
         
         <Card>
             <CardHeader><CardTitle>Información Básica</CardTitle></CardHeader>
@@ -248,7 +256,8 @@ export default function ProductForm({ product }: ProductFormProps) {
                   )}
                 />
 
-                 <FormField control={form.control} name="contactUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de Contacto (WhatsApp, etc.)</FormLabel><FormControl><Input {...field} placeholder="https://wa.me/591..." /></FormControl><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="contactUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de WhatsApp</FormLabel><FormControl><Input {...field} placeholder="https://wa.me/591..." /></FormControl><FormDescription>Enlace de WhatsApp para contacto directo.</FormDescription><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="websiteUrl" render={({ field }) => (<FormItem><FormLabel>Sitio Web del Sponsor</FormLabel><FormControl><Input {...field} placeholder="https://sponsor.com" /></FormControl><FormDescription>Sitio web oficial del sponsor o tienda online.</FormDescription><FormMessage /></FormItem>)} />
             </CardContent>
         </Card>
         

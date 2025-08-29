@@ -4,13 +4,13 @@
 import { revalidatePath } from 'next/cache';
 import * as z from 'zod';
 import { randomUUID } from 'crypto';
-import { uploadToCloudinary } from '@/lib/cloudinary';
+import { uploadToCloudinaryServer } from '@/lib/cloudinary-server';
 import { createEventWithPodiums as createEventFirebase, updateEventWithPodiums as updateEventFirebase, deleteEventWithPodiums as deleteEventFirebase } from '@/lib/data-service';
 
 // --- Helper para subir archivos a Cloudinary ---
 async function uploadFile(file: File, folder: string): Promise<string> {
-    const result = await uploadToCloudinary(file, folder);
-    return result.secure_url;
+    const result = await uploadToCloudinaryServer(file, folder);
+    return result; // uploadToCloudinaryServer ya devuelve la URL directamente
 }
 
 async function uploadFiles(files: File[], folder: string): Promise<string[]> {
@@ -69,10 +69,19 @@ export async function createEventWithPodiums(formData: FormData) {
   console.log('DEBUG - createEventWithPodiums called');
   try {
     const promotionalImage = formData.get('promotionalImage') as File;
+    console.log('DEBUG - promotionalImage:', promotionalImage ? `${promotionalImage.name} (${promotionalImage.size} bytes)` : 'null');
+    
     if (!promotionalImage || promotionalImage.size === 0) {
       return { success: false, message: 'La imagen promocional es obligatoria.' };
     }
+    
+    console.log('DEBUG - Uploading promotional image...');
     const promotionalImageUrl = await uploadFile(promotionalImage, 'events');
+    console.log('DEBUG - promotionalImageUrl:', promotionalImageUrl);
+
+    if (!promotionalImageUrl) {
+      return { success: false, message: 'Error al subir la imagen promocional a Cloudinary.' };
+    }
 
     // Gallery images (optional)
     const galleryFiles = (formData.getAll('galleryImages') as unknown as File[]).filter((f) => f && (f as any).size > 0);
@@ -87,11 +96,17 @@ export async function createEventWithPodiums(formData: FormData) {
       gallery_image_urls: galleryImageUrls,
     };
 
+    console.log('DEBUG - eventData:', eventData);
+
     const podiumsJSON = formData.get('podiums') as string;
     const podiums = processPodiums(podiumsJSON);
     console.log('DEBUG - About to call processPodiums with JSON:', podiumsJSON);
     
     const result = await createEventFirebase(eventData, podiums);
+    
+    if (!result.success) {
+      return { success: false, message: result.error || 'Error al crear el evento' };
+    }
 
     revalidatePath('/admin/events');
     revalidatePath('/calendario');
@@ -133,7 +148,11 @@ export async function updateEventWithPodiums(eventId: string, formData: FormData
         const podiumsJSON = formData.get('podiums') as string;
         const podiums = processPodiums(podiumsJSON);
         
-        await updateEventFirebase(eventId, eventData, podiums);
+        const result = await updateEventFirebase(eventId, eventData, podiums);
+        
+        if (!result.success) {
+          return { success: false, message: result.error || 'Error al actualizar el evento' };
+        }
 
         revalidatePath('/admin/events');
         revalidatePath(`/admin/events/edit/${eventId}`);
@@ -149,7 +168,11 @@ export async function updateEventWithPodiums(eventId: string, formData: FormData
 
 export async function deleteEvent(eventId: string) {
   try {
-    await deleteEventFirebase(eventId);
+    const result = await deleteEventFirebase(eventId);
+    
+    if (!result.success) {
+      return { success: false, message: result.error || 'Error al eliminar el evento' };
+    }
 
     revalidatePath('/admin/events');
     revalidatePath('/calendario');

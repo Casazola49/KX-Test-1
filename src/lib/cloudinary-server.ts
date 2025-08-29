@@ -1,4 +1,3 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 
 // Configurar Cloudinary
@@ -8,24 +7,14 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export async function POST(request: NextRequest) {
+// Función para subir archivos desde el servidor
+export const uploadToCloudinaryServer = async (file: File, folder: string): Promise<string> => {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
-    const folder = formData.get('folder') as string || 'uploads';
-
-    if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'No file provided' },
-        { status: 400 }
-      );
-    }
-
     // Convertir el archivo a buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Subir a Cloudinary
+    // Subir a Cloudinary directamente
     const result = await new Promise((resolve, reject) => {
       cloudinary.uploader.upload_stream(
         {
@@ -42,18 +31,9 @@ export async function POST(request: NextRequest) {
     });
 
     const uploadResult = result as any;
-
-    return NextResponse.json({
-      success: true,
-      url: uploadResult.secure_url,
-      public_id: uploadResult.public_id,
-    });
-
+    return uploadResult.secure_url;
   } catch (error) {
-    console.error('Upload error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Upload failed' },
-      { status: 500 }
-    );
+    console.error('Cloudinary upload error:', error);
+    throw new Error('Failed to upload file to Cloudinary');
   }
-}
+};

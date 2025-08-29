@@ -7,7 +7,9 @@ import NewsSection from '@/components/sections/NewsSection';
 import HomepagePodium from '@/components/sections/HomepagePodium';
 import NextRaceSection from '@/components/sections/NextRaceSection';
 import HomeGalleryClient from '@/components/client/HomeGalleryClient';
+import FeaturedProductsCarousel from '@/components/shared/FeaturedProductsCarousel';
 import { getEvents, getNews, getPodium } from '@/lib/data';
+import { getAllProducts } from '@/lib/data-service';
 
 // Metadata específica para la página de inicio
 export const metadata: Metadata = {
@@ -28,6 +30,7 @@ export default async function HomePage() {
   const events = await getEvents();
   const news = await getNews();
   const podium = await getPodium();
+  const products = await getAllProducts();
 
   // Ordenamos los eventos por fecha para asegurarnos de que el próximo sea el correcto.
   const now = new Date();
@@ -60,6 +63,11 @@ export default async function HomePage() {
           </Suspense>
         </div>
       </div>
+      
+      {/* Carrusel de Productos Destacados */}
+      <Suspense fallback={<div className="h-96 bg-black animate-pulse"></div>}>
+        <FeaturedProductsCarousel products={products} />
+      </Suspense>
     </div>
   );
 }

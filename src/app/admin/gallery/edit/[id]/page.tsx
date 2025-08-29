@@ -6,7 +6,7 @@ import Section from '@/components/shared/Section';
 import type { GalleryItem } from '@/lib/types';
 import { notFound } from 'next/navigation';
 import { getGalleryItemById } from '@/lib/data-service';
-import { getRaceEvents } from '@/app/admin/standings/actions';
+import { getAllRaceEvents } from '@/lib/data-service';
 
 async function getGalleryItem(id: string): Promise<GalleryItem | null> {
     try {
@@ -20,7 +20,7 @@ async function getGalleryItem(id: string): Promise<GalleryItem | null> {
 
 export default async function EditGalleryItemPage({ params }: { params: { id: string } }) {
   const item = await getGalleryItem(params.id);
-  const events = await getRaceEvents();
+  const events = await getAllRaceEvents();
 
   if (!item) {
     notFound();
