@@ -39,9 +39,9 @@ export const uploadToCloudinary = async (file: File, folder: string) => {
 Verificamos que estén configuradas en `.env.local`:
 
 ```env
-NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=dggj5tnke
-CLOUDINARY_API_KEY=461236681432879
-CLOUDINARY_API_SECRET=_AnfhQw7VaxmcxKq-18T5wmNK4s
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 ```
 
 ## 🧪 Cómo Probar la Solución

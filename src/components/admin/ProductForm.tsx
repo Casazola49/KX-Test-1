@@ -29,12 +29,17 @@ interface Product {
   summary?: string | null;
   description?: string | null;
   price?: number | null;
+  stock?: number | null;
   category: string;
+  subcategory?: string | null;
   department?: string | null;
   image_url?: string | null;
-  gallery_image_urls?: string[] | null;
+  gallery_images?: string[] | null;
   is_featured?: boolean | null;
   contact_url?: string | null;
+  specifications?: { [key: string]: string } | null;
+  tags?: string[] | null;
+  sponsor_level?: 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONZE' | null;
   created_at?: string;
 }
 
@@ -44,11 +49,16 @@ const FormSchema = z.object({
   slug: z.string().min(3, { message: 'El slug debe tener al menos 3 caracteres.' }).regex(/^[a-z0-9-]+$/, { message: 'El slug solo puede contener minúsculas, números y guiones.' }),
   brand: z.string().optional(),
   category: z.string().min(3, { message: 'La categoría es requerida.' }),
+  subcategory: z.string().optional(),
   department: z.string().optional(),
   price: z.coerce.number().min(0, "El precio no puede ser negativo.").optional(),
+  stock: z.coerce.number().min(0, "El stock no puede ser negativo.").optional(),
   contactUrl: z.string().url({ message: "Por favor, introduce una URL válida." }).optional().or(z.literal('')),
   summary: z.string().optional(),
   description: z.string().optional(),
+  specifications: z.string().optional(),
+  tags: z.string().optional(),
+  sponsorLevel: z.enum(['PLATINUM', 'GOLD', 'SILVER', 'BRONZE']).optional(),
   isFeatured: z.boolean().default(false),
 });
 
@@ -89,9 +99,14 @@ export default function ProductForm({ product }: ProductFormProps) {
       summary: product?.summary || "",
       description: product?.description || "",
       price: product?.price || undefined,
+      stock: product?.stock || undefined,
       category: product?.category || "",
-      department: product?.department || "general", // CORRECTED: Use non-empty default
+      subcategory: product?.subcategory || "",
+      department: product?.department || "general",
       contactUrl: product?.contact_url || "",
+      specifications: product?.specifications ? JSON.stringify(product.specifications, null, 2) : "",
+      tags: product?.tags ? product.tags.join(', ') : "",
+      sponsorLevel: product?.sponsor_level || undefined,
       isFeatured: product?.is_featured || false,
     },
   });
@@ -141,6 +156,22 @@ export default function ProductForm({ product }: ProductFormProps) {
         formData.set('department', data.department);
       }
 
+      // Procesar especificaciones JSON
+      if (data.specifications) {
+        try {
+          const specs = JSON.parse(data.specifications);
+          formData.set('specifications', JSON.stringify(specs));
+        } catch (error) {
+          throw new Error('Las especificaciones deben estar en formato JSON válido');
+        }
+      }
+
+      // Procesar tags
+      if (data.tags) {
+        const tagsArray = data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        formData.set('tags', JSON.stringify(tagsArray));
+      }
+
       formAction(formData);
 
     } catch (error: any) {
@@ -162,8 +193,10 @@ export default function ProductForm({ product }: ProductFormProps) {
                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Producto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="slug" render={({ field }) => (<FormItem><FormLabel>Slug (URL)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="brand" render={({ field }) => (<FormItem><FormLabel>Marca</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Categoría</FormLabel><FormControl><Input {...field} placeholder="Ej: repuestos, seguridad, filtros" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Precio</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Categoría Principal</FormLabel><FormControl><Input {...field} placeholder="Ej: Chasis, Motores, Neumáticos, Seguridad" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="subcategory" render={({ field }) => (<FormItem><FormLabel>Subcategoría</FormLabel><FormControl><Input {...field} placeholder="Ej: Profesional, Junior, 2 Tiempos, Pista Seca" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Precio (USD)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="stock" render={({ field }) => (<FormItem><FormLabel>Stock Disponible</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 
                 <FormField
                   control={form.control}
@@ -171,14 +204,14 @@ export default function ProductForm({ product }: ProductFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Departamento</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || 'general'}>
+                      <Select onValueChange={field.onChange} value={field.value || 'General'}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un departamento" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="general">General (Sin departamento)</SelectItem> 
+                          <SelectItem value="General">General (Todos los departamentos)</SelectItem> 
                           {departments.map(dept => (
                             <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                           ))}
@@ -189,6 +222,32 @@ export default function ProductForm({ product }: ProductFormProps) {
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="sponsorLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nivel de Sponsor</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona nivel de sponsor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="PLATINUM">Platinum</SelectItem>
+                          <SelectItem value="GOLD">Gold</SelectItem>
+                          <SelectItem value="SILVER">Silver</SelectItem>
+                          <SelectItem value="BRONZE">Bronze</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Nivel de patrocinio del producto.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                  <FormField control={form.control} name="contactUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de Contacto (WhatsApp, etc.)</FormLabel><FormControl><Input {...field} placeholder="https://wa.me/591..." /></FormControl><FormMessage /></FormItem>)} />
             </CardContent>
         </Card>
@@ -198,6 +257,8 @@ export default function ProductForm({ product }: ProductFormProps) {
             <CardContent className="space-y-4">
                 <FormField control={form.control} name="summary" render={({ field }) => (<FormItem><FormLabel>Resumen</FormLabel><FormControl><Textarea {...field} placeholder="Una descripción corta para la tarjeta del producto."/></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descripción Completa</FormLabel><FormControl><Textarea rows={6} {...field} placeholder="Descripción detallada para la página del producto." /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="specifications" render={({ field }) => (<FormItem><FormLabel>Especificaciones Técnicas (JSON)</FormLabel><FormControl><Textarea rows={4} {...field} placeholder='{"Material": "Acero al carbono", "Peso": "32 kg", "Longitud": "1.8m"}'/></FormControl><FormDescription>Formato JSON con las especificaciones técnicas del producto.</FormDescription><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="tags" render={({ field }) => (<FormItem><FormLabel>Etiquetas</FormLabel><FormControl><Input {...field} placeholder="profesional, competición, resistente (separadas por comas)"/></FormControl><FormDescription>Etiquetas separadas por comas para facilitar la búsqueda.</FormDescription><FormMessage /></FormItem>)} />
             </CardContent>
         </Card>
 

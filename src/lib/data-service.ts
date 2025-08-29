@@ -1016,3 +1016,141 @@ export async function deleteProduct(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+// PRODUCTOS - Funciones adicionales
+export async function getProductsByCategory(category: string) {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, COLLECTIONS.PRODUCTS),
+        where('category', '==', category),
+        orderBy('createdAt', 'desc')
+      )
+    );
+    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting products by category:', error);
+    return [];
+  }
+}
+
+export async function getProductsByDepartment(department: string) {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, COLLECTIONS.PRODUCTS),
+        where('department', '==', department),
+        orderBy('createdAt', 'desc')
+      )
+    );
+    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting products by department:', error);
+    return [];
+  }
+}
+
+export async function getFeaturedProducts() {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, COLLECTIONS.PRODUCTS),
+        where('is_featured', '==', true),
+        orderBy('createdAt', 'desc')
+      )
+    );
+    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting featured products:', error);
+    return [];
+  }
+}
+
+export async function getProductsByBrand(brand: string) {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, COLLECTIONS.PRODUCTS),
+        where('brand', '==', brand),
+        orderBy('createdAt', 'desc')
+      )
+    );
+    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting products by brand:', error);
+    return [];
+  }
+}
+
+export async function searchProducts(searchTerm: string) {
+  try {
+    // Firebase no tiene búsqueda de texto completo nativa, 
+    // así que obtenemos todos los productos y filtramos en el cliente
+    const snapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
+    const allProducts = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    
+    const searchLower = searchTerm.toLowerCase();
+    return allProducts.filter(product => 
+      product.name.toLowerCase().includes(searchLower) ||
+      product.description.toLowerCase().includes(searchLower) ||
+      product.brand.toLowerCase().includes(searchLower) ||
+      product.category.toLowerCase().includes(searchLower) ||
+      (product.tags && product.tags.some(tag => tag.toLowerCase().includes(searchLower)))
+    );
+  } catch (error) {
+    console.error('Error searching products:', error);
+    return [];
+  }
+}
+
+export async function getProductCategories() {
+  try {
+    const snapshot = await getDocs(collection(db, COLLECTIONS.PRODUCTS));
+    const products = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Crear un mapa de categorías con conteo de productos
+    const categoryMap = new Map();
+    
+    products.forEach(product => {
+      if (!categoryMap.has(product.category)) {
+        categoryMap.set(product.category, {
+          name: product.category,
+          count: 0,
+          subcategories: new Set()
+        });
+      }
+      
+      const category = categoryMap.get(product.category);
+      category.count++;
+      
+      if (product.subcategory) {
+        category.subcategories.add(product.subcategory);
+      }
+    });
+    
+    // Convertir a array y formatear subcategorías
+    return Array.from(categoryMap.entries()).map(([name, data]) => ({
+      name,
+      count: data.count,
+      subcategories: Array.from(data.subcategories)
+    }));
+  } catch (error) {
+    console.error('Error getting product categories:', error);
+    return [];
+  }
+}
+
+export async function getProductById(id: string) {
+  try {
+    const docRef = doc(db, COLLECTIONS.PRODUCTS, id);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting product by ID:', error);
+    return null;
+  }
+}
