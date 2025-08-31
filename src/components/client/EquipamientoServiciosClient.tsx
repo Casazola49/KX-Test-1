@@ -19,7 +19,8 @@ import {
   Zap,
   Award,
   TrendingUp,
-  Sparkles
+  Sparkles,
+  ArrowLeft
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
@@ -637,21 +638,33 @@ export default function EquipamientoServiciosClient({ products }: { products: Pr
             className="mb-8 space-y-4"
           >
             {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm text-gray-400">
-              <button 
+            <div className="flex items-center gap-4 mb-4">
+              <Button 
                 onClick={handleBackToCategories}
-                className="text-primary hover:text-primary/80 transition-colors"
+                variant="outline"
+                className="bg-black/50 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 font-semibold"
               >
-                Categorías
-              </button>
-              <ChevronsRight className="w-4 h-4" />
-              <span>{selectedCategory}</span>
-              {selectedSubcategory && (
-                <>
-                  <ChevronsRight className="w-4 h-4" />
-                  <span>{selectedSubcategory}</span>
-                </>
-              )}
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Volver a Categorías
+              </Button>
+              
+              {/* Breadcrumb path */}
+              <div className="flex items-center gap-2 text-sm text-gray-400">
+                <button 
+                  onClick={handleBackToCategories}
+                  className="text-primary hover:text-primary/80 transition-colors"
+                >
+                  Categorías
+                </button>
+                <ChevronsRight className="w-4 h-4" />
+                <span className="text-primary font-semibold">{selectedCategory}</span>
+                {selectedSubcategory && (
+                  <>
+                    <ChevronsRight className="w-4 h-4" />
+                    <span>{selectedSubcategory}</span>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Controles */}

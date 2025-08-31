@@ -224,12 +224,33 @@ export default function ProductDetailClient({ product }: { product: Product }) {
         animate={{ opacity: 1, x: 0 }}
         className="mb-8"
       >
-        <Button variant="ghost" asChild className="text-primary hover:text-primary/80">
-          <Link href="/equipamiento-servicios">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Volver a Equipamiento
-          </Link>
-        </Button>
+        <div className="flex items-center gap-4">
+          <Button 
+            variant="outline" 
+            asChild 
+            className="bg-black/50 border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all duration-300 font-semibold"
+          >
+            <Link href="/equipamiento-servicios">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Volver a Categorías
+            </Link>
+          </Button>
+          
+          {/* Breadcrumb path */}
+          <div className="flex items-center gap-2 text-sm text-gray-400">
+            <Link href="/equipamiento-servicios" className="text-primary hover:text-primary/80 transition-colors">
+              Equipamiento y Servicios
+            </Link>
+            <span>/</span>
+            <span className="text-primary">{product.category}</span>
+            {product.subcategory && (
+              <>
+                <span>/</span>
+                <span>{product.subcategory}</span>
+              </>
+            )}
+          </div>
+        </div>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-12">

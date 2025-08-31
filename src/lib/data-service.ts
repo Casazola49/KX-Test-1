@@ -67,8 +67,24 @@ export async function getAllPilots(): Promise<Pilot[]> {
   );
   const pilots = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
   
-  // Los pilotos ya tienen el campo 'category' con el nombre, no necesitamos buscar por category_id
-  return pilots;
+  // Resolver nombres de categorías si el campo 'category' contiene un ID (UUID)
+  const resolvedPilots = await Promise.all(pilots.map(async (pilot) => {
+    if (pilot.category && pilot.category.length > 20 && pilot.category.includes('-')) {
+      // Si parece ser un UUID, buscar el nombre de la categoría
+      try {
+        const categoryDoc = await getDoc(doc(db, COLLECTIONS.CATEGORIES, pilot.category));
+        if (categoryDoc.exists()) {
+          const categoryData = categoryDoc.data();
+          return { ...pilot, category: categoryData.name };
+        }
+      } catch (error) {
+        console.error('Error resolving category for pilot:', pilot.id, error);
+      }
+    }
+    return pilot;
+  }));
+  
+  return resolvedPilots;
 }
 
 export async function getPilotBySlug(slug: string): Promise<Pilot | null> {
@@ -79,7 +95,19 @@ export async function getPilotBySlug(slug: string): Promise<Pilot | null> {
   const doc = snapshot.docs[0];
   const pilot = convertTimestamps({ id: doc.id, ...doc.data() });
   
-  // Los pilotos ya tienen el campo 'category' con el nombre
+  // Resolver nombre de categoría si el campo 'category' contiene un ID (UUID)
+  if (pilot.category && pilot.category.length > 20 && pilot.category.includes('-')) {
+    try {
+      const categoryDoc = await getDoc(doc(db, COLLECTIONS.CATEGORIES, pilot.category));
+      if (categoryDoc.exists()) {
+        const categoryData = categoryDoc.data();
+        pilot.category = categoryData.name;
+      }
+    } catch (error) {
+      console.error('Error resolving category for pilot:', pilot.id, error);
+    }
+  }
+  
   return pilot;
 }
 

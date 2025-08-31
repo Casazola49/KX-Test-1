@@ -202,7 +202,7 @@ export default function FeaturedProductsCarousel({ products }: FeaturedProductsC
   // Auto-play functionality
   useEffect(() => {
     if (isAutoPlaying && featuredProducts.length > 1) {
-      intervalRef.current = setInterval(nextSlide, 4000); // Cambiar cada 4 segundos
+      intervalRef.current = setInterval(nextSlide, 7000); // Cambiar cada 7 segundos
       return () => {
         if (intervalRef.current) clearInterval(intervalRef.current);
       };
