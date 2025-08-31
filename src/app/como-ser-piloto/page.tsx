@@ -65,7 +65,7 @@ export default function ComoSerPilotoPage() {
         <div className="mt-12 text-center p-6 bg-card rounded-lg border border-border">
           <h3 className="text-2xl font-semibold mb-3">Recursos Adicionales</h3>
           <p className="text-muted-foreground mb-6">
-            Te recomendamos contactar con la Federación Boliviana de Automovilismo Deportivo (FEBAD) o las asociaciones
+            Te recomendamos contactar con el Comisión Nacional de Karting (CNK) o las asociaciones
             departamentales de karting para obtener información más detallada y actualizada.
           </p>
           <Button asChild size="lg">
