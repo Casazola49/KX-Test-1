@@ -7,7 +7,9 @@ import CountdownTimer from '@/components/shared/CountdownTimer';
 import HeroStats from '@/components/sections/HeroStats';
 import HeroCTA from '@/components/sections/HeroCTA';
 import { Event } from '@/lib/types';
-import { supabase } from '@/lib/supabase-client';
+import { db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { COLLECTIONS } from '@/lib/firebase-collections';
 import { ChevronDown, Zap, Trophy, Flag } from 'lucide-react';
 
 // Lazy load componentes pesados
@@ -80,16 +82,13 @@ export default function HomepageHero({ events }: HomepageHeroProps) {
   useEffect(() => {
     if (!events || events.length === 0) return;
 
-    // Lógica para carrera en vivo (la dejamos por si se implementa en el futuro)
+    // Lógica para carrera en vivo usando Firebase
     const checkLiveStatus = async (currentRace: Event) => {
         try {
-            const { data, error } = await supabase
-                .from('live_streams')
-                .select('is_live')
-                .eq('event_id', currentRace.id)
-                .single();
+            const liveStreamRef = doc(db, COLLECTIONS.LIVE_STREAMS, currentRace.id);
+            const liveStreamSnap = await getDoc(liveStreamRef);
 
-            if (data?.is_live) {
+            if (liveStreamSnap.exists() && liveStreamSnap.data()?.is_live) {
                 setIsLiveStreamActive(true);
                 setLiveRace(currentRace);
                 setNextRace(undefined); // Limpiamos la próxima carrera si hay una en vivo

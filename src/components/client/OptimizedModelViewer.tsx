@@ -97,8 +97,8 @@ const OptimizedModel = ({ url, quality = 'high' }: { url: string; quality?: 'low
   }, [scene, quality]);
 
   return (
-    <Center position={[0, 0.75, 0]}>
-      <primitive ref={modelRef} object={optimizedScene} />
+    <Center position={[0, 0, 0]}>
+      <primitive ref={modelRef} object={optimizedScene} scale={[1.2, 1.2, 1.2]} />
     </Center>
   );
 };
@@ -121,9 +121,9 @@ const OptimizedCameraController = ({ quality }: { quality: string }) => {
     
     gl.setPixelRatio(pixelRatio);
     
-    // Configurar cámara
-    camera.position.set(2, 2, 3);
-    camera.lookAt(0, 0.75, 0);
+    // Configurar cámara con mejor posición para karts (más cerca)
+    camera.position.set(3, 2.5, 4);
+    camera.lookAt(0, 0.5, 0);
     
     // Optimizaciones adicionales
     if (quality === 'low' || isLowEnd) {
@@ -287,7 +287,7 @@ const OptimizedModelViewer: React.FC<OptimizedModelViewerProps> = ({
         )}
 
         <Suspense fallback={<LoadingProgress />}>
-          <Bounds fit clip observe margin={1.2}>
+          <Bounds fit clip observe margin={1.5}>
             <OptimizedModel url={modelUrl} quality={quality} />
           </Bounds>
         </Suspense>
@@ -295,16 +295,16 @@ const OptimizedModelViewer: React.FC<OptimizedModelViewerProps> = ({
         <OptimizedCameraController quality={quality} />
 
         <OrbitControls
-          minDistance={isMobile ? 1.5 : 2}
-          maxDistance={isMobile ? 8 : 10}
+          minDistance={isMobile ? 2.5 : 3}
+          maxDistance={isMobile ? 10 : 12}
           enablePan={false}
-          target={[0, 0.75, 0]}
+          target={[0, 0.5, 0]}
           enableDamping={quality !== 'low'}
           dampingFactor={0.05}
           rotateSpeed={isMobile ? 0.8 : 1}
-          zoomSpeed={isMobile ? 0.8 : 1}
-          maxPolarAngle={Math.PI * 0.8}
-          minPolarAngle={Math.PI * 0.2}
+          zoomSpeed={isMobile ? 1.2 : 1.5}
+          maxPolarAngle={Math.PI * 0.85}
+          minPolarAngle={Math.PI * 0.15}
         />
       </Canvas>
 

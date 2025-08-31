@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createClient } from '@supabase/supabase-js';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -28,12 +28,6 @@ type FormValues = z.infer<typeof FormSchema>;
 interface KartFormProps {
   kart?: Kart; // El componente ahora acepta un kart existente para edición
 }
-
-// Cliente de Supabase para el navegador (solo para subir archivos)
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 export default function KartForm({ kart }: KartFormProps) {
   const router = useRouter();
@@ -74,13 +68,13 @@ export default function KartForm({ kart }: KartFormProps) {
     if (!modelFile) {
       throw new Error('No se ha seleccionado ningún archivo de modelo.');
     }
-    const fileName = `karts/${Date.now()}-${modelFile.name}`;
-    const { error } = await supabase.storage.from('karts').upload(fileName, modelFile);
-    if (error) {
-      throw new Error(`Error al subir el modelo: ${error.message}`);
+    try {
+      const url = await uploadToCloudinary(modelFile, 'karts');
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir el modelo 3D');
     }
-    const { data } = supabase.storage.from('karts').getPublicUrl(fileName);
-    return data.publicUrl;
   };
 
 

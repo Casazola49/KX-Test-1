@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Radio, MessageSquare, Info, Users, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { createClient } from '@supabase/supabase-js';
 
 interface LiveStreamSettings {
   id: number;
@@ -28,24 +27,13 @@ const SimpleLiveChatFeed = ({ isLive }: { isLive: boolean }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const channelRef = useRef<any>(null);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  // Simple fetch messages function
+  // Simple fetch messages function using Firebase
   const fetchMessages = async () => {
     try {
       setIsLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('live_chat_messages')
-        .select('*')
-        .order('created_at', { ascending: true })
-        .limit(50);
-
-      if (fetchError) throw fetchError;
+      const { getChatMessages } = await import('@/lib/data-service');
+      const data = await getChatMessages();
       setMessages(data || []);
       setError(null);
     } catch (err) {
@@ -62,34 +50,12 @@ const SimpleLiveChatFeed = ({ isLive }: { isLive: boolean }) => {
 
     fetchMessages();
 
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('simple_live_chat')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'live_chat_messages'
-      }, (payload) => {
-        console.log('📨 New message:', payload.new);
-        setMessages(prev => [...prev, payload.new as ChatMessage]);
-        
-        // Auto-scroll to bottom
-        setTimeout(() => {
-          if (scrollContainerRef.current) {
-            scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-          }
-        }, 100);
-      })
-      .subscribe();
-
-    channelRef.current = channel;
+    // Set up polling for new messages (simplified real-time)
+    const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds
 
     // Cleanup
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      clearInterval(interval);
     };
   }, [isLive]); // Only depend on isLive
 
@@ -166,24 +132,24 @@ export default function SimpleLiveStreamClient({ initialSettings }: { initialSet
   const [isLoading, setIsLoading] = useState(!initialSettings);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
-  const channelRef = useRef<any>(null);
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
-
-  // Simple fetch settings
+  // Simple fetch settings using Firebase
   const fetchSettings = async () => {
     try {
       setIsLoading(true);
-      const { data, error: fetchError } = await supabase
-        .from('live_stream')
-        .select('*')
-        .single();
-
-      if (fetchError) throw fetchError;
-      setSettings(data);
+      const { getLiveStreamConfig } = await import('@/lib/data-service');
+      const data = await getLiveStreamConfig();
+      
+      if (data) {
+        setSettings({
+          id: 1,
+          is_live: data.is_live,
+          stream_title: data.stream_title,
+          iframe_url: data.iframe_url,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
       setLastUpdate(new Date());
       setError(null);
     } catch (err) {
@@ -210,28 +176,12 @@ export default function SimpleLiveStreamClient({ initialSettings }: { initialSet
       fetchSettings();
     }
 
-    // Set up real-time subscription for settings
-    const channel = supabase
-      .channel('simple_live_stream')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'live_stream'
-      }, (payload) => {
-        console.log('🔄 Settings updated:', payload.new);
-        setSettings(payload.new as LiveStreamSettings);
-        setLastUpdate(new Date());
-      })
-      .subscribe();
-
-    channelRef.current = channel;
+    // Set up polling for settings updates (simplified real-time)
+    const interval = setInterval(fetchSettings, 10000); // Poll every 10 seconds
 
     // Cleanup
     return () => {
-      if (channelRef.current) {
-        supabase.removeChannel(channelRef.current);
-        channelRef.current = null;
-      }
+      clearInterval(interval);
     };
   }, []); // Empty dependencies - run only once
 

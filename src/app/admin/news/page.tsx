@@ -3,32 +3,21 @@ import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import type { NewsArticle } from '@/lib/types';
 import NewsListClient from '@/components/admin/NewsListClient';
-import { createClient } from '@supabase/supabase-js';
-
-// Usamos la clave de servicio para tener acceso garantizado en el entorno de admin
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getAllNews } from '@/lib/data-service';
 
 async function getNews() {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('news')
-      .select('*')
-      .order('date', { ascending: false });
-
-    if (error) throw error;
-
-    const articles = data.map(doc => {
-        return { 
-            ...doc,
-            date: new Date(doc.date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
-        }
-    }) as NewsArticle[];
-    return articles;
+    const articles = await getAllNews();
+    return articles.map(article => ({
+      ...article,
+      date: article.createdAt ? new Date(article.createdAt).toLocaleDateString('es-ES', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      }) : 'Sin fecha'
+    })) as NewsArticle[];
   } catch (error) {
-    console.error("Error fetching news for admin from Supabase:", error);
+    console.error("Error fetching news for admin from Firebase:", error);
     return [];
   }
 }

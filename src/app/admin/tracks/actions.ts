@@ -3,13 +3,11 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
-
-// Use the service role key for admin actions to bypass RLS policies.
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { 
+  createTrack, 
+  updateTrack, 
+  deleteTrack as deleteTrackFromFirebase 
+} from '@/lib/data-service';
 
 const TrackSchema = z.object({
   id: z.string().optional(),
@@ -53,14 +51,12 @@ export async function saveTrack(data: z.infer<typeof TrackSchema>) {
     let result;
     if (id) {
       // Update
-      const { data, error } = await supabaseAdmin.from('tracks').update(payload).eq('id', id).select().single();
-      if (error) throw error;
-      result = data;
+      await updateTrack(id, payload);
+      result = { id };
     } else {
       // Create
-      const { data, error } = await supabaseAdmin.from('tracks').insert(payload).select().single();
-      if (error) throw error;
-      result = data;
+      const newId = await createTrack(payload);
+      result = { id: newId };
     }
 
     // Revalidate paths
@@ -85,8 +81,7 @@ export async function deleteTrack(id: string) {
     try {
         if (!id) throw new Error("ID de pista no proporcionado.");
         
-        const { error } = await supabaseAdmin.from('tracks').delete().eq('id', id);
-        if (error) throw error;
+        await deleteTrackFromFirebase(id);
         
         revalidatePath('/pistas');
         revalidatePath('/admin/tracks');

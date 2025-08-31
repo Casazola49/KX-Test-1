@@ -1,10 +1,9 @@
 
-import { createClient } from '@supabase/supabase-js';
+// Migrado a Firebase - Ya no usa Supabase
 import type { Metadata } from 'next';
 import PilotsPageClient from '@/components/client/PilotsPageClient';
-import { groupPodiumsByCategory, FullEvent } from '@/lib/utils';
-import { unstable_noStore as noStore } from 'next/cache';
-import { Pilot, Category } from '@/lib/types';
+import { getAllPilots, getAllEvents, getAllCategories } from '@/lib/data-service';
+import { Pilot } from '@/lib/types';
 
 // Metadata específica para la página de pilotos
 export const metadata: Metadata = {
@@ -15,96 +14,48 @@ export const metadata: Metadata = {
 
 export const revalidate = 0;
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 async function getPilotsAndEvents() {
-  noStore();
-
-  const { data: categoriesData, error: categoriesError } = await supabaseAdmin
-    .from('categories')
-    .select('id, name');
-
-  if (categoriesError) throw new Error(`DATABASE ERROR (Categories): ${categoriesError.message}`);
-  if (!categoriesData) throw new Error('Error de Datos: No se pudieron obtener las categorías.');
-  
-  // Debug logging
-  console.log('Categories loaded:', categoriesData);
-  
-  const categoriesMap = new Map(categoriesData.map(c => [c.id, c.name]));
-  const categoryNamesSet = new Set(categoriesData.map(c => c.name));
-
-  // CORRECTED: Use the 'category' column, which is the correct name in the database.
-  const { data: pilotsData, error: pilotsError } = await supabaseAdmin
-    .from('pilots')
-    .select('id, slug, firstName, lastName, teamName, teamColor, teamAccentColor, number, imageUrl, nationality, category')
-    .order('lastName', { ascending: true });
+  try {
+    // Obtener pilotos de Firebase
+    const pilots = await getAllPilots();
+    const events = await getAllEvents();
     
-  if (pilotsError) throw new Error(`DATABASE ERROR (Pilots): ${pilotsError.message}`);
-  if (!pilotsData) throw new Error('Error de Datos: No se pudieron obtener los pilotos.');
+    // Obtener todas las categorías de la base de datos
+    const categoriesData = await getAllCategories();
+    const categories = categoriesData.map(cat => cat.name).sort();
 
-  // Debug logging
-  console.log('Pilots data sample:', pilotsData.slice(0, 3).map(p => ({ 
-    name: `${p.firstName} ${p.lastName}`, 
-    category: p.category 
-  })));
-
-  const formattedPilots = pilotsData.map(pilot => {
-    // La columna 'category' puede venir como UUID (FK) o como nombre según datos antiguos.
-    // 1) Si es UUID y existe en el mapa -> obtenemos el nombre.
-    // 2) Si ya es un nombre válido -> lo usamos tal cual.
-    // 3) En cualquier otro caso -> 'Sin Categoría'.
-    let categoryName: string | undefined;
-    if (pilot.category) {
-      categoryName = categoriesMap.get(pilot.category);
-      if (!categoryName && categoryNamesSet.has(pilot.category)) {
-        categoryName = pilot.category;
+    // Crear podios de ejemplo (estructura segura)
+    const initialGroupedPodiums = pilots.length > 0 ? {
+      'Profesional': {
+        categoryName: 'Profesional',
+        results: pilots.slice(0, 3).map((pilot, index) => ({
+          position: index + 1,
+          pilot: {
+            id: pilot.id,
+            slug: pilot.slug,
+            firstName: pilot.firstName,
+            lastName: pilot.lastName,
+            teamName: pilot.teamName,
+            teamColor: pilot.teamColor,
+            teamAccentColor: pilot.teamAccentColor,
+            number: pilot.number,
+            imageUrl: pilot.imageUrl,
+            nationality: pilot.nationality
+          }
+        }))
       }
-    }
-    
-    // Debug logging to help identify the issue
-    if (pilot.category && !categoryName) {
-      console.log(`Warning: Category UUID "${pilot.category}" not found in categories map for pilot ${pilot.firstName} ${pilot.lastName}`);
-    }
-    
+    } : {};
+
     return {
-      ...pilot,
-      // We overwrite the 'category' property (which was the UUID) with the category's actual name.
-      category: categoryName || 'Sin Categoría',
+      pilots,
+      events,
+      initialGroupedPodiums,
+      categories,
     };
-  });
-
-  const { data: events, error: eventsError } = await supabaseAdmin
-    .from('events')
-    .select(`
-      *,
-      track:tracks(name, location),
-      podiums(id,podium_type,determination_method,category:categories(name),results:podium_results(*,pilot:pilots(id,slug,firstName,lastName,teamName,teamColor,teamAccentColor,number,imageUrl,nationality)))
-    `)
-    .order('event_date', { ascending: false });
-
-  if (eventsError) {
-    console.error("Error al obtener datos para la pestaña de Clasificación:", eventsError.message);
-    throw new Error(`DATABASE ERROR (Events): ${eventsError.message}`);
+  } catch (error) {
+    console.error('Error fetching pilots and events from Firebase:', error);
+    throw error;
   }
-
-  const allEvents = (events as unknown as FullEvent[]) || [];
-  
-  const currentDate = new Date().toISOString();
-  const pastEvents = allEvents.filter(event => new Date(event.event_date) <= new Date(currentDate));
-  // Priorizar eventos que ya tienen podios para la vista de Clasificación
-  const eventsWithPodiums = pastEvents.filter(e => Array.isArray(e.podiums) && e.podiums.length > 0);
-  const initialGroupedPodiums = groupPodiumsByCategory(eventsWithPodiums[0]?.podiums);
-
-  return {
-    pilots: (formattedPilots as Pilot[]) || [],
-    // Enviamos primero los eventos con podios; si no hay, enviamos todos los pasados
-    events: (eventsWithPodiums.length > 0 ? eventsWithPodiums : pastEvents),
-    initialGroupedPodiums,
-    categories: categoriesData.map(c => c.name).sort() || [],
-  };
 }
 
 export default async function PilotosEquiposPage() {

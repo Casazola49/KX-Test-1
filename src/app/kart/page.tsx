@@ -11,7 +11,6 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import OptimizedModelViewer from '@/components/client/OptimizedModelViewer'; // Importamos el visor 3D optimizado
-import { createClient } from '@supabase/supabase-js';
 
 // Tipos para los datos
 interface KartPart {
@@ -139,37 +138,75 @@ const KartPage: NextPage = () => {
 
   useEffect(() => {
     const fetchKarts = async () => {
-      const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
       setLoading(true);
       
       try {
-        const { data, error } = await supabase.from('karts').select('*');
-
-        if (error) {
-          console.error('Error fetching karts:', error);
-        } else {
-          const categories = data.map(kart => ({
-            name: kart.category,
-            description: kart.description,
-            modelUrl: kart.model_url,
-            parts: BASE_KART_COMPONENTS
-          }));
+        // Obtener karts desde Firebase usando el servicio de datos con carga optimizada
+        const { getAllKarts } = await import('@/lib/data-service');
+        
+        // Usar Promise.race para timeout rápido si la conexión es lenta
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 5000)
+        );
+        
+        const karts = await Promise.race([getAllKarts(), timeoutPromise]);
+        
+        console.log('🏎️ Karts obtenidos de Firebase:', karts);
+        console.log('📊 Cantidad de karts:', karts?.length || 0);
+        
+        if (karts && karts.length > 0) {
+          const categories = karts.map(kart => {
+            console.log('🔄 Procesando kart:', kart.name, 'Categoría:', kart.category, 'URL:', kart.model_url);
+            return {
+              name: kart.category,
+              description: kart.description || `Kart ${kart.category}`,
+              modelUrl: kart.model_url,
+              parts: BASE_KART_COMPONENTS
+            };
+          });
           
+          console.log('📋 Categorías creadas:', categories);
           setKartCategories(categories);
+          
           if (categories.length > 0) {
             setSelectedCategoryName(categories[0].name);
             
             // Precargar solo el primer modelo para carga más rápida
             if (categories[0].modelUrl) {
-              console.log('Precargando modelo:', categories[0].modelUrl);
+              console.log('🎯 Precargando modelo:', categories[0].modelUrl);
             }
           }
+        } else {
+          // Si no hay datos en Firebase, usar datos por defecto
+          const defaultCategories = [
+            {
+              name: 'Kart Estándar',
+              description: 'Kart básico para principiantes y competencia amateur',
+              modelUrl: '/kart/MarioKart.glb',
+              parts: BASE_KART_COMPONENTS
+            }
+          ];
+          setKartCategories(defaultCategories);
+          setSelectedCategoryName(defaultCategories[0].name);
         }
       } catch (error) {
         console.error('Error fetching karts:', error);
+        // Fallback rápido a datos por defecto en caso de error o timeout
+        const defaultCategories = [
+          {
+            name: 'Kart Estándar',
+            description: 'Kart básico para principiantes y competencia amateur',
+            modelUrl: '/kart/MarioKart.glb',
+            parts: BASE_KART_COMPONENTS
+          }
+        ];
+        setKartCategories(defaultCategories);
+        setSelectedCategoryName(defaultCategories[0].name);
+        
+        // Si fue un timeout, mostrar mensaje específico
+        if (error.message === 'Timeout') {
+          console.warn('⚠️ Carga de karts lenta, usando datos por defecto');
+        }
       } finally {
         setLoading(false);
       }

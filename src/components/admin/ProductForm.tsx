@@ -18,8 +18,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Loader2, UploadCloud, ImagePlus } from 'lucide-react';
 import Image from 'next/image';
-import { createClient } from '@supabase/supabase-js';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 interface Product {
   id?: string;
@@ -29,12 +29,17 @@ interface Product {
   summary?: string | null;
   description?: string | null;
   price?: number | null;
+  stock?: number | null;
   category: string;
+  subcategory?: string | null;
   department?: string | null;
   image_url?: string | null;
-  gallery_image_urls?: string[] | null;
+  gallery_images?: string[] | null;
   is_featured?: boolean | null;
   contact_url?: string | null;
+  specifications?: { [key: string]: string } | null;
+  tags?: string[] | null;
+  sponsor_level?: 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONZE' | null;
   created_at?: string;
 }
 
@@ -44,11 +49,17 @@ const FormSchema = z.object({
   slug: z.string().min(3, { message: 'El slug debe tener al menos 3 caracteres.' }).regex(/^[a-z0-9-]+$/, { message: 'El slug solo puede contener minúsculas, números y guiones.' }),
   brand: z.string().optional(),
   category: z.string().min(3, { message: 'La categoría es requerida.' }),
+  subcategory: z.string().optional(),
   department: z.string().optional(),
-  price: z.coerce.number().min(0, "El precio no puede ser negativo.").optional(),
+  price: z.string().optional().transform(val => val === '' ? undefined : Number(val)),
+  stock: z.string().optional().transform(val => val === '' ? undefined : Number(val)),
   contactUrl: z.string().url({ message: "Por favor, introduce una URL válida." }).optional().or(z.literal('')),
+  websiteUrl: z.string().url({ message: "Por favor, introduce una URL válida." }).optional().or(z.literal('')),
   summary: z.string().optional(),
   description: z.string().optional(),
+  specifications: z.string().optional(),
+  tags: z.string().optional(),
+  sponsorLevel: z.enum(['PLATINUM', 'GOLD', 'SILVER', 'BRONZE']).optional(),
   isFeatured: z.boolean().default(false),
 });
 
@@ -69,16 +80,11 @@ export default function ProductForm({ product }: ProductFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
-  
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
 
   const [mainImageFile, setMainImageFile] = useState<File | null>(null);
   const [galleryImageFiles, setGalleryImageFiles] = useState<File[]>([]);
   const [mainImagePreview, setMainImagePreview] = useState<string | null>(product?.image_url || null);
-  const [galleryPreviews, setGalleryPreviews] = useState<string[]>(product?.gallery_image_urls || []);
+  const [galleryPreviews, setGalleryPreviews] = useState<string[]>(product?.gallery_images || []);
   const [isUploading, setIsUploading] = useState(false);
 
   const initialState: ProductFormState = { message: '', success: false };
@@ -87,16 +93,22 @@ export default function ProductForm({ product }: ProductFormProps) {
   const form = useForm<FormValues>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
-      id: product?.id,
+      id: product?.id || "",
       name: product?.name || "",
       slug: product?.slug || "",
       brand: product?.brand || "",
       summary: product?.summary || "",
       description: product?.description || "",
-      price: product?.price || undefined,
+      price: product?.price !== null && product?.price !== undefined ? product.price.toString() : "",
+      stock: product?.stock !== null && product?.stock !== undefined ? product.stock.toString() : "",
       category: product?.category || "",
-      department: product?.department || "general", // CORRECTED: Use non-empty default
+      subcategory: product?.subcategory || "",
+      department: product?.department || "General",
       contactUrl: product?.contact_url || "",
+      websiteUrl: product?.website_url || "",
+      specifications: product?.specifications ? JSON.stringify(product.specifications, null, 2) : "",
+      tags: product?.tags && product.tags.length > 0 ? product.tags.join(', ') : "",
+      sponsorLevel: product?.sponsor_level || undefined,
       isFeatured: product?.is_featured || false,
     },
   });
@@ -112,12 +124,14 @@ export default function ProductForm({ product }: ProductFormProps) {
     }
   }, [state, toast, router]);
   
-  const uploadFile = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `product-images/${Date.now()}_${Math.random()}.${fileExt}`;
-    const { error, data } = await supabase.storage.from('kpx-images').upload(fileName, file);
-    if (error) throw error;
-    return supabase.storage.from('kpx-images').getPublicUrl(data.path).data.publicUrl;
+  const uploadFile = async (file: File, folder: string): Promise<string> => {
+    try {
+      const url = await uploadToCloudinary(file, folder);
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir el archivo');
+    }
   };
 
   const handleFormSubmit = async (data: FormValues) => {
@@ -127,13 +141,13 @@ export default function ProductForm({ product }: ProductFormProps) {
     try {
       let mainImageUrl = product?.image_url;
       if (mainImageFile) {
-        mainImageUrl = await uploadFile(mainImageFile);
+        mainImageUrl = await uploadFile(mainImageFile, 'product-images');
       }
       if (!mainImageUrl) throw new Error("La imagen principal es obligatoria.");
 
-      let galleryImageUrls = product?.gallery_image_urls || [];
+      let galleryImageUrls = product?.gallery_images || [];
       if (galleryImageFiles.length > 0) {
-        galleryImageUrls = await Promise.all(galleryImageFiles.map(file => uploadFile(file)));
+        galleryImageUrls = await Promise.all(galleryImageFiles.map(file => uploadFile(file, 'product-gallery')));
       }
 
       const formData = new FormData(formRef.current!);
@@ -142,6 +156,27 @@ export default function ProductForm({ product }: ProductFormProps) {
       
       if (data.department) {
         formData.set('department', data.department);
+      }
+
+      // ARREGLO: Agregar sponsor level explícitamente
+      if (data.sponsorLevel) {
+        formData.set('sponsorLevel', data.sponsorLevel);
+      }
+
+      // Procesar especificaciones JSON
+      if (data.specifications) {
+        try {
+          const specs = JSON.parse(data.specifications);
+          formData.set('specifications', JSON.stringify(specs));
+        } catch (error) {
+          throw new Error('Las especificaciones deben estar en formato JSON válido');
+        }
+      }
+
+      // Procesar tags
+      if (data.tags) {
+        const tagsArray = data.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0);
+        formData.set('tags', JSON.stringify(tagsArray));
       }
 
       formAction(formData);
@@ -158,6 +193,7 @@ export default function ProductForm({ product }: ProductFormProps) {
     <Form {...form}>
       <form ref={formRef} onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-8">
         <input type="hidden" name="id" value={product?.id || ''} />
+        <input type="hidden" name="sponsorLevel" value={form.watch('sponsorLevel') || ''} />
         
         <Card>
             <CardHeader><CardTitle>Información Básica</CardTitle></CardHeader>
@@ -165,8 +201,10 @@ export default function ProductForm({ product }: ProductFormProps) {
                 <FormField control={form.control} name="name" render={({ field }) => (<FormItem><FormLabel>Nombre del Producto</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="slug" render={({ field }) => (<FormItem><FormLabel>Slug (URL)</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="brand" render={({ field }) => (<FormItem><FormLabel>Marca</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Categoría</FormLabel><FormControl><Input {...field} placeholder="Ej: repuestos, seguridad, filtros" /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Precio</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="category" render={({ field }) => (<FormItem><FormLabel>Categoría Principal</FormLabel><FormControl><Input {...field} placeholder="Ej: Chasis, Motores, Neumáticos, Seguridad" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="subcategory" render={({ field }) => (<FormItem><FormLabel>Subcategoría</FormLabel><FormControl><Input {...field} placeholder="Ej: Profesional, Junior, 2 Tiempos, Pista Seca" /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="price" render={({ field }) => (<FormItem><FormLabel>Precio (USD)</FormLabel><FormControl><Input type="number" step="0.01" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="stock" render={({ field }) => (<FormItem><FormLabel>Stock Disponible</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 
                 <FormField
                   control={form.control}
@@ -174,14 +212,14 @@ export default function ProductForm({ product }: ProductFormProps) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Departamento</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value || 'general'}>
+                      <Select onValueChange={field.onChange} value={field.value || 'General'}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecciona un departamento" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="general">General (Sin departamento)</SelectItem> 
+                          <SelectItem value="General">General (Todos los departamentos)</SelectItem> 
                           {departments.map(dept => (
                             <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                           ))}
@@ -192,7 +230,34 @@ export default function ProductForm({ product }: ProductFormProps) {
                     </FormItem>
                   )}
                 />
-                 <FormField control={form.control} name="contactUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de Contacto (WhatsApp, etc.)</FormLabel><FormControl><Input {...field} placeholder="https://wa.me/591..." /></FormControl><FormMessage /></FormItem>)} />
+
+                <FormField
+                  control={form.control}
+                  name="sponsorLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nivel de Sponsor</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecciona nivel de sponsor" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="PLATINUM">Platinum</SelectItem>
+                          <SelectItem value="GOLD">Gold</SelectItem>
+                          <SelectItem value="SILVER">Silver</SelectItem>
+                          <SelectItem value="BRONZE">Bronze</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>Nivel de patrocinio del producto.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                 <FormField control={form.control} name="contactUrl" render={({ field }) => (<FormItem><FormLabel>Enlace de WhatsApp</FormLabel><FormControl><Input {...field} placeholder="https://wa.me/591..." /></FormControl><FormDescription>Enlace de WhatsApp para contacto directo.</FormDescription><FormMessage /></FormItem>)} />
+                 <FormField control={form.control} name="websiteUrl" render={({ field }) => (<FormItem><FormLabel>Sitio Web del Sponsor</FormLabel><FormControl><Input {...field} placeholder="https://sponsor.com" /></FormControl><FormDescription>Sitio web oficial del sponsor o tienda online.</FormDescription><FormMessage /></FormItem>)} />
             </CardContent>
         </Card>
         
@@ -201,6 +266,8 @@ export default function ProductForm({ product }: ProductFormProps) {
             <CardContent className="space-y-4">
                 <FormField control={form.control} name="summary" render={({ field }) => (<FormItem><FormLabel>Resumen</FormLabel><FormControl><Textarea {...field} placeholder="Una descripción corta para la tarjeta del producto."/></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Descripción Completa</FormLabel><FormControl><Textarea rows={6} {...field} placeholder="Descripción detallada para la página del producto." /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="specifications" render={({ field }) => (<FormItem><FormLabel>Especificaciones Técnicas (JSON)</FormLabel><FormControl><Textarea rows={4} {...field} placeholder='{"Material": "Acero al carbono", "Peso": "32 kg", "Longitud": "1.8m"}'/></FormControl><FormDescription>Formato JSON con las especificaciones técnicas del producto.</FormDescription><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="tags" render={({ field }) => (<FormItem><FormLabel>Etiquetas</FormLabel><FormControl><Input {...field} placeholder="profesional, competición, resistente (separadas por comas)"/></FormControl><FormDescription>Etiquetas separadas por comas para facilitar la búsqueda.</FormDescription><FormMessage /></FormItem>)} />
             </CardContent>
         </Card>
 

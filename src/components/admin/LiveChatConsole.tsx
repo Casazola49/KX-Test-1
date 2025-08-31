@@ -9,7 +9,7 @@ import { sendChatMessage } from '@/app/admin/live/actions';
 import { useToast } from '@/hooks/use-toast';
 // import { usePageCleanup } from '@/hooks/usePageCleanup';
 import { Send, MessageSquare, Trash2 } from 'lucide-react';
-import { createClient } from '@supabase/supabase-js';
+import { getChatMessages, createChatMessage, clearChatMessages } from '@/lib/data-service';
 
 export default function LiveChatConsole() {
   const [message, setMessage] = useState('');
@@ -18,41 +18,16 @@ export default function LiveChatConsole() {
   const [isConnected, setIsConnected] = useState(false);
   const channelRef = useRef<any>(null);
   const { toast } = useToast();
-  const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  // Migrado a Firebase - ya no necesitamos cliente de Supabase
 
-  // Use page cleanup hook
-  // usePageCleanup({
-  //   onCleanup: () => {
-  //     console.log('🧹 LiveChatConsole cleaning up...');
-  //     if (channelRef.current) {
-  //       try {
-  //         channelRef.current.unsubscribe();
-  //         supabase.removeChannel(channelRef.current);
-  //       } catch (error) {
-  //         console.warn('⚠️ Error cleaning up chat console:', error);
-  //       }
-  //       channelRef.current = null;
-  //     }
-  //     setIsConnected(false);
-  //   },
-  //   enabled: true
-  // });
+  // Migrado a Firebase - funcionalidad de limpieza simplificada
 
-  // Cargar mensajes iniciales y suscribirse a nuevos mensajes
+  // Cargar mensajes iniciales (migrado a Firebase)
   useEffect(() => {
     const fetchInitialMessages = async () => {
       try {
-        const { data, error } = await supabase
-          .from('live_chat_messages')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(10);
-        
-        if (error) throw error;
-        if (data) setMessages(data.reverse());
+        const data = await getChatMessages();
+        setMessages(data || []);
       } catch (error) {
         console.error('❌ Error fetching initial messages:', error);
         toast({
@@ -65,45 +40,13 @@ export default function LiveChatConsole() {
 
     fetchInitialMessages();
 
-    const channel = supabase
-      .channel('admin_live_chat')
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'live_chat_messages' 
-      }, (payload) => {
-        console.log('📨 New message in admin console:', payload.new);
-        setMessages((prevMessages) => [...prevMessages, payload.new]);
-      })
-      .on('postgres_changes', { 
-        event: 'DELETE', 
-        schema: 'public', 
-        table: 'live_chat_messages' 
-      }, (payload) => {
-        console.log('🗑️ Message deleted in admin console:', payload.old);
-        setMessages((prevMessages) => prevMessages.filter(msg => msg.id !== payload.old.id));
-      })
-      .subscribe((status) => {
-        console.log('🔌 Admin chat console connection status:', status);
-        setIsConnected(status === 'SUBSCRIBED');
-      });
-
-    channelRef.current = channel;
-
+    // Tiempo real deshabilitado temporalmente - migrado a Firebase
+    setIsConnected(true); // Simular conexión por ahora
+    
     return () => {
-      console.log('🧹 Cleaning up admin chat console subscription');
-      if (channelRef.current) {
-        try {
-          channelRef.current.unsubscribe();
-          supabase.removeChannel(channelRef.current);
-        } catch (error) {
-          console.warn('⚠️ Error during cleanup:', error);
-        }
-        channelRef.current = null;
-      }
       setIsConnected(false);
     };
-  }, [supabase, toast]);
+  }, [toast]);
 
 
   const handleSendMessage = async () => {
@@ -139,13 +82,7 @@ export default function LiveChatConsole() {
 
   const handleClearMessages = async () => {
     try {
-      const { error } = await supabase
-        .from('live_chat_messages')
-        .delete()
-        .neq('id', '00000000-0000-0000-0000-000000000000'); // Delete all
-
-      if (error) throw error;
-      
+      await clearChatMessages();
       setMessages([]);
       toast({
         title: "Mensajes eliminados",

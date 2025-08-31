@@ -1,7 +1,6 @@
 
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase-server';
-import type { Event, Podium } from '@/lib/types';
+import type { Event, FullPodium } from '@/lib/types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,36 +16,48 @@ import { unstable_noStore as noStore } from 'next/cache';
 // --- TIPO DE DATO COMPLETO ---
 type FullEvent = Event & {
   track: { name: string; location: string } | null;
-  podiums: Podium[];
+  podiums: FullPodium[];
 };
 
-// --- CONSULTA COMPLETA A LA BASE DE DATOS (ACTUALIZADA) ---
+// --- CONSULTA COMPLETA A LA BASE DE DATOS (MIGRADA A FIREBASE) ---
 async function getEventDetails(id: string): Promise<FullEvent | null> {
   noStore();
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('events')
-    .select(`
-      *,
-      track:tracks(name, location),
-      podiums:podiums(
-        *,
-        category:categories(name),
-        results:podium_results(
-          *,
-          pilot:pilots(firstName, lastName, teamName, teamColor, number, imageUrl)
-        )
-      )
-    `)
-    .eq('id', id)
-    .single();
+  try {
+    const { getEventWithPodiumsSimple } = await import('@/lib/data-service-simple');
+    const eventData = await getEventWithPodiumsSimple(id);
+    
+    console.log('🔍 DEBUG - Event data from Firebase:', {
+      id: eventData?.id,
+      name: eventData?.name,
+      podiums: eventData?.podiums,
+      podiumsType: typeof eventData?.podiums,
+      podiumsIsArray: Array.isArray(eventData?.podiums),
+      podiumsLength: eventData?.podiums?.length
+    });
+    
+    if (!eventData) {
+      return null;
+    }
 
-  if (error) {
-    console.error(`Error fetching full event details for id ${id}:`, error);
+    // Mapear datos de Firebase al formato esperado
+    return {
+      id: eventData.id,
+      name: eventData.name,
+      date: eventData.event_date || eventData.date, // Firebase usa 'event_date'
+      promotional_image_url: eventData.promotional_image_url || eventData.promoImageUrl,
+      description: eventData.description,
+      gallery_image_urls: eventData.gallery_image_urls || eventData.galleryImageUrls || [],
+      track: eventData.track ? {
+        name: eventData.track.name,
+        location: eventData.track.location
+      } : null,
+      podiums: Array.isArray(eventData.podiums) ? eventData.podiums : [] // Asegurar que sea array
+    } as FullEvent;
+
+  } catch (error) {
+    console.error(`Error fetching event details for id ${id}:`, error);
     return null;
   }
-  
-  return data as FullEvent;
 }
 
 // --- COMPONENTE DE LA PÁGINA FINAL ---

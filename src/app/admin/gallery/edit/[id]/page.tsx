@@ -5,35 +5,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Section from '@/components/shared/Section';
 import type { GalleryItem } from '@/lib/types';
 import { notFound } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-import { getRaceEvents } from '@/app/admin/standings/actions';
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { getGalleryItemById } from '@/lib/data-service';
+import { getAllRaceEvents } from '@/lib/data-service';
 
 async function getGalleryItem(id: string): Promise<GalleryItem | null> {
     try {
-        const { data, error } = await supabaseAdmin
-            .from('gallery')
-            .select('*')
-            .eq('id', id)
-            .single();
-
-        if (error) throw error;
-        
-        return data as GalleryItem;
-
+        const item = await getGalleryItemById(id);
+        return item as GalleryItem;
     } catch (error) {
-        console.error("Error fetching gallery item for editing from Supabase:", error);
+        console.error("Error fetching gallery item for editing from Firebase:", error);
         return null;
     }
 }
 
 export default async function EditGalleryItemPage({ params }: { params: { id: string } }) {
   const item = await getGalleryItem(params.id);
-  const events = await getRaceEvents();
+  const events = await getAllRaceEvents();
 
   if (!item) {
     notFound();

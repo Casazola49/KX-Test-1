@@ -1,6 +1,6 @@
 
-import { createClient } from '@supabase/supabase-js';
 import { updateLiveStreamSettings } from './actions';
+import { getLiveStreamConfig } from '@/lib/data-service';
 import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,19 +11,22 @@ import { Button } from '@/components/ui/button';
 import LiveChatConsole from '@/components/admin/LiveChatConsole'; // Importamos la consola de chat
 import LiveTroubleshooting from '@/components/admin/LiveTroubleshooting';
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
-
 export default async function AdminLivePage() {
-  const { data: settings, error } = await supabaseAdmin
-    .from('live_stream')
-    .select('*')
-    .single();
-
-  if (error) {
+  let settings;
+  
+  try {
+    settings = await getLiveStreamConfig();
+  } catch (error: any) {
     return <Section><p>Error al cargar la configuración: {error.message}</p></Section>;
+  }
+
+  // Si no hay configuración, usar valores por defecto
+  if (!settings) {
+    settings = {
+      is_live: false,
+      stream_title: '',
+      iframe_url: ''
+    };
   }
 
   return (

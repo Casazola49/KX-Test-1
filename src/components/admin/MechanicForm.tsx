@@ -10,7 +10,7 @@ import { saveMechanic } from '@/app/admin/mechanics/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { Mechanic } from '@/lib/types';
-import { createClient } from '@supabase/supabase-js';
+import { uploadToCloudinary } from '@/lib/cloudinary';
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -38,8 +38,6 @@ const departments = ['Servicio Internacional', 'Cochabamba', 'La Paz', 'Santa Cr
 export default function MechanicForm({ mechanic }: MechanicFormProps) {
   const router = useRouter();
   const { toast } = useToast();
-  
-  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(mechanic?.image_url || null);
@@ -73,11 +71,13 @@ export default function MechanicForm({ mechanic }: MechanicFormProps) {
   }, [state, toast, router]);
 
   const uploadFile = async (file: File): Promise<string> => {
-    const fileExt = file.name.split('.').pop();
-    const fileName = `mechanic-logos/${Date.now()}_${Math.random()}.${fileExt}`;
-    const { error, data } = await supabase.storage.from('kpx-images').upload(fileName, file);
-    if (error) throw error;
-    return supabase.storage.from('kpx-images').getPublicUrl(data.path).data.publicUrl;
+    try {
+      const url = await uploadToCloudinary(file, 'mechanic-logos');
+      return url;
+    } catch (error) {
+      console.error('Error uploading to Cloudinary:', error);
+      throw new Error('Error al subir el archivo');
+    }
   };
 
   // THE DEFINITIVE FIX: Build FormData from react-hook-form's state, not the DOM

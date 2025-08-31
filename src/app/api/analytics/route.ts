@@ -35,24 +35,7 @@ const processEvents = async (payload: AnalyticsPayload) => {
   
   // Ejemplo: Guardar en logs (en producción, usar una base de datos)
   if (process.env.NODE_ENV === 'production') {
-    // Aquí implementarías el guardado real
-    // Por ejemplo, en Supabase:
-    /*
-    const { supabase } = await import('@/lib/supabase');
-    
-    for (const event of payload.events) {
-      await supabase.from('analytics_events').insert({
-        type: event.type,
-        timestamp: new Date(event.timestamp),
-        url: event.url,
-        referrer: event.referrer,
-        user_agent: event.userAgent,
-        screen_resolution: event.screenResolution,
-        data: event.data,
-        device_info: payload.deviceInfo
-      });
-    }
-    */
+    // Aquí implementarías el guardado real en Firebase o tu base de datos preferida
   }
 };
 

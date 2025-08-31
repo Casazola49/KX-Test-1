@@ -1,10 +1,10 @@
 
-import { createClient } from '@supabase/supabase-js';
 import { notFound } from 'next/navigation';
 import { Product } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import PageTitle from '@/components/shared/PageTitle';
 import ProductDetailClient from '@/components/client/ProductDetailClient';
+import { getProductBySlug } from '@/lib/data-service';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,23 +14,14 @@ interface ProductPageProps {
   };
 }
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 async function getProduct(slug: string): Promise<Product | null> {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-
-  if (error) {
-    console.error('Error fetching product:', error.message);
+  try {
+    const product = await getProductBySlug(slug);
+    return product;
+  } catch (error) {
+    console.error('Error fetching product:', error);
     return null;
   }
-  return data as Product;
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {

@@ -1,5 +1,4 @@
 
-import { createClient } from '@/lib/supabase-server'; // Reverted to alias path
 import { Mechanic } from '@/lib/types';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -7,20 +6,15 @@ import { PlusCircle } from 'lucide-react';
 import PageTitle from '@/components/shared/PageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
+import { getAllMechanics } from '@/lib/data-service';
 
 async function getMechanics(): Promise<Mechanic[]> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from('mechanics')
-    .select('*')
-    .order('department', { ascending: true })
-    .order('name', { ascending: true });
-
-  if (error) {
+  try {
+    return await getAllMechanics();
+  } catch (error) {
     console.error('Error fetching mechanics:', error);
     return [];
   }
-  return data;
 }
 
 export default async function AdminMechanicsPage() {

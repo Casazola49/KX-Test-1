@@ -190,14 +190,47 @@ export interface Kart {
 
 export interface Product {
     id: string;
+    slug: string;
     name: string;
     description: string;
-    price: number;
+    summary: string;
+    price?: number;
     image_url: string;
+    gallery_images?: string[];
+    gallery_image_urls?: string[];
     category: string;
-    brand: string;
-    stock: number;
+    subcategory?: string;
+    brand?: string;
+    stock?: number;
     is_featured: boolean;
+    department: string;
+    specifications?: { [key: string]: string };
+    tags?: string[];
+    sponsor_level?: 'PLATINUM' | 'GOLD' | 'SILVER' | 'BRONZE';
+    contact_url?: string;
+    website_url?: string;
+    created_at?: string;
+    updated_at?: string;
+}
+
+export interface ProductCategory {
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+    icon: string;
+    image_url: string;
+    subcategories: ProductSubcategory[];
+    product_count: number;
+}
+
+export interface ProductSubcategory {
+    id: string;
+    name: string;
+    slug: string;
+    description: string;
+    category_id: string;
+    product_count: number;
 }
 
 export interface Auspicio {

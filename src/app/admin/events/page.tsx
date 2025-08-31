@@ -1,8 +1,8 @@
 
-import { createClient } from '@/lib/supabase-server';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { unstable_noStore as noStore } from 'next/cache';
+import { getAllEvents } from '@/lib/data-service';
 import {
   Table,
   TableBody,
@@ -28,22 +28,21 @@ interface AdminEvent {
 
 async function getEvents(): Promise<AdminEvent[]> {
   noStore();
-  const supabase = createClient();
-  const { data: events, error } = await supabase
-    .from('events')
-    .select(`
-      id,
-      name,
-      event_date,
-      track:tracks (name)
-    `)
-    .order('event_date', { ascending: false });
-
-  if (error) {
+  
+  try {
+    const events = await getAllEvents();
+    
+    // Mapear los datos de Firebase al formato esperado
+    return events.map(event => ({
+      id: event.id,
+      name: event.name,
+      event_date: event.event_date,
+      track: event.track ? { name: event.track.name } : null
+    }));
+  } catch (error) {
     console.error('Error fetching admin events:', error);
     return [];
   }
-  return events as AdminEvent[];
 }
 
 export default async function AdminEventsPage() {

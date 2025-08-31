@@ -1,30 +1,39 @@
 
-import { createClient } from '@/lib/supabase-server';
 import EventForm from '@/components/admin/EventForm';
+import { 
+  getAllTracks, 
+  getAllPilots, 
+  getAllCategories 
+} from '@/lib/data-service';
 
 export const revalidate = 0;
 
 export default async function AddEventPage() {
-  const supabase = createClient();
+  try {
+    const [tracks, pilots, categories] = await Promise.all([
+      getAllTracks(),
+      getAllPilots(),
+      getAllCategories()
+    ]);
 
-  const { data: tracks } = await supabase.from('tracks').select('id, name');
-  const { data: pilots } = await supabase.from('pilots').select('id, firstName, lastName');
-  const { data: categories } = await supabase.from('categories').select('id, name');
+    if (!tracks || !pilots || !categories) {
+      return <div>Error al cargar datos necesarios para el formulario.</div>;
+    }
 
-  if (!tracks || !pilots || !categories) {
-    return <div>Error al cargar datos necesarios para el formulario.</div>;
+    const mappedPilots = pilots.map(p => ({ ...p, fullName: `${p.firstName} ${p.lastName}` }));
+
+    return (
+      <div className="container mx-auto py-10">
+        <h1 className="text-4xl font-bold mb-8 text-center">Crear Nuevo Evento</h1>
+        <EventForm
+          tracks={tracks}
+          pilots={mappedPilots}
+          categories={categories}
+        />
+      </div>
+    );
+  } catch (error) {
+    console.error('Error loading add event page:', error);
+    return <div>Error al cargar la página de creación de eventos.</div>;
   }
-
-  const mappedPilots = pilots.map(p => ({ ...p, fullName: `${p.firstName} ${p.lastName}` }));
-
-  return (
-    <div className="container mx-auto py-10">
-      <h1 className="text-4xl font-bold mb-8 text-center">Crear Nuevo Evento</h1>
-      <EventForm
-        tracks={tracks}
-        pilots={mappedPilots}
-        categories={categories}
-      />
-    </div>
-  );
 }

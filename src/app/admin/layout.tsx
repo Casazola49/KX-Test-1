@@ -54,14 +54,7 @@ export default function AdminLayout({
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <Link href="/admin/standings">
-                    <Trophy className="h-4 w-4 mr-2" />
-                    <span>Standings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>

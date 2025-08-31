@@ -8,31 +8,17 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Card, CardTitle, CardDescription, CardContent, CardHeader } from '@/components/ui/card';
-import { createClient } from '@supabase/supabase-js';
+import { getPilotBySlug } from '@/lib/data-service';
 import ModelViewer from '@/components/client/ModelViewer';
 
 export const dynamic = 'force-dynamic';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 async function getPilot(slug: string): Promise<Pilot | undefined> {
   try {
-    const { data, error } = await supabase
-        .from('pilots')
-        .select('*')
-        .eq('slug', slug)
-        .limit(1)
-        .single();
-    
-    if (error) throw error;
-    
-    return data as Pilot;
-
+    const pilot = await getPilotBySlug(slug);
+    return pilot || undefined;
   } catch (error) {
-    console.error(`Error fetching pilot with slug ${slug} from Supabase:`, error);
+    console.error(`Error fetching pilot with slug ${slug} from Firebase:`, error);
     return undefined;
   }
 }

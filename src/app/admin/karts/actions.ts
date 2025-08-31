@@ -1,15 +1,9 @@
 
 'use server';
 
-import { createClient } from '@supabase/supabase-js';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-
-// Cliente de Supabase para el servidor con permisos de administrador
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { createKart as createKartInFirebase, updateKart as updateKartInFirebase, deleteKart as deleteKartInFirebase } from '@/lib/data-service';
 
 // Esquema de validación para los datos del kart
 const kartSchema = z.object({
@@ -25,9 +19,13 @@ export async function createKart(payload: unknown) {
   if (!result.success) {
     return { success: false, error: result.error.flatten().fieldErrors };
   }
+  
   try {
-    const { error } = await supabaseAdmin.from('karts').insert(result.data);
-    if (error) throw new Error(error.message);
+    const response = await createKartInFirebase(result.data);
+    if (!response.success) {
+      throw new Error(response.error);
+    }
+    
     revalidatePath('/admin/karts');
     revalidatePath('/kart');
     return { success: true, message: 'Kart creado exitosamente.' };
@@ -39,13 +37,18 @@ export async function createKart(payload: unknown) {
 // --- ACCIÓN DE ACTUALIZAR ---
 export async function updateKart(id: string, payload: unknown) {
   if (!id) return { success: false, error: 'ID del kart no proporcionado.' };
+  
   const result = kartSchema.safeParse(payload);
   if (!result.success) {
     return { success: false, error: result.error.flatten().fieldErrors };
   }
+  
   try {
-    const { error } = await supabaseAdmin.from('karts').update(result.data).eq('id', id);
-    if (error) throw new Error(error.message);
+    const response = await updateKartInFirebase(id, result.data);
+    if (!response.success) {
+      throw new Error(response.error);
+    }
+    
     revalidatePath('/admin/karts');
     revalidatePath(`/admin/karts/edit/${id}`);
     revalidatePath('/kart');
@@ -58,9 +61,13 @@ export async function updateKart(id: string, payload: unknown) {
 // --- ACCIÓN DE ELIMINAR ---
 export async function deleteKart(id: string) {
   if (!id) return { success: false, error: 'ID del kart no proporcionado.' };
+  
   try {
-    const { error } = await supabaseAdmin.from('karts').delete().eq('id', id);
-    if (error) throw new Error(error.message);
+    const response = await deleteKartInFirebase(id);
+    if (!response.success) {
+      throw new Error(response.error);
+    }
+    
     revalidatePath('/admin/karts');
     revalidatePath('/kart');
     return { success: true, message: 'Kart eliminado exitosamente.' };

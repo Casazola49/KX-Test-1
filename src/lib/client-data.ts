@@ -1,33 +1,45 @@
-import { supabase } from './supabase-client';
+import { db } from './firebase';
+import { collection, query, where, getDocs, orderBy, limit } from 'firebase/firestore';
 import { News } from './types';
 
 /**
  * Funciones de datos específicas para el cliente
- * Estas funciones solo usan supabase-client y no tienen dependencias del servidor
+ * Estas funciones usan Firebase y funcionan en el navegador
  */
 
 export async function getNewsBySlugClient(slug: string): Promise<News | null> {
-  const { data, error } = await supabase
-    .from('news')
-    .select('*')
-    .eq('slug', slug)
-    .single();
-
-  if (error) {
-    if (error.code === 'PGRST116') return null;
-    throw new Error(error.message);
+  try {
+    const newsRef = collection(db, 'news');
+    const q = query(newsRef, where('slug', '==', slug));
+    const querySnapshot = await getDocs(q);
+    
+    if (querySnapshot.empty) {
+      return null;
+    }
+    
+    const doc = querySnapshot.docs[0];
+    return {
+      id: doc.id,
+      ...doc.data()
+    } as News;
+  } catch (error) {
+    console.error('Error fetching news by slug:', error);
+    throw new Error('Failed to fetch news');
   }
-  
-  return data as News | null;
 }
 
 export async function getNewsClient(): Promise<News[]> {
-  const { data, error } = await supabase
-    .from('news')
-    .select('*')
-    .order('date', { ascending: false })
-    .limit(12);
+  try {
+    const newsRef = collection(db, 'news');
+    const q = query(newsRef, orderBy('createdAt', 'desc'), limit(12));
+    const querySnapshot = await getDocs(q);
     
-  if (error) throw new Error(error.message);
-  return (data as News[]) || [];
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    })) as News[];
+  } catch (error) {
+    console.error('Error fetching news:', error);
+    throw new Error('Failed to fetch news');
+  }
 }

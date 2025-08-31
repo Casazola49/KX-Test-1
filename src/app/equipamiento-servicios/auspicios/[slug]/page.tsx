@@ -8,30 +8,17 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import AuspicioDetailView from '@/components/client/AuspicioDetailView';
 import { Card } from '@/components/ui/card';
-import { createClient } from '@supabase/supabase-js';
 
 export const dynamic = 'force-dynamic';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 async function getAuspicioItem(slug: string): Promise<AuspicioItem | undefined> {
   try {
-    const { data, error } = await supabase
-        .from('auspicios')
-        .select('*')
-        .eq('slug', slug)
-        .limit(1)
-        .single();
-    
-    if (error) throw error;
-
-    return data as AuspicioItem | undefined;
-
+    // Por ahora retornamos undefined ya que no tenemos auspicios en Firebase
+    // TODO: Implementar cuando se migre la tabla de auspicios
+    console.log(`Auspicio item with slug ${slug} not implemented in Firebase yet`);
+    return undefined;
   } catch (error) {
-    console.error(`Error fetching auspicio item with slug ${slug} from Supabase:`, error);
+    console.error(`Error fetching auspicio item with slug ${slug}:`, error);
     return undefined;
   }
 }

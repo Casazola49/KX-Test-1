@@ -3,7 +3,11 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { createClient } from '@supabase/supabase-js';
+import { 
+  createMechanic, 
+  updateMechanic, 
+  deleteMechanic as deleteMechanicFromFirebase 
+} from '@/lib/data-service';
 
 // Zod Schema for server-side validation with robust URL handling
 const MechanicSchema = z.object({
@@ -23,10 +27,7 @@ export type MechanicFormState = {
   success: boolean;
 };
 
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Migrado a Firebase - ya no usa Supabase
 
 export async function saveMechanic(
   prevState: MechanicFormState,
@@ -68,11 +69,9 @@ export async function saveMechanic(
 
   try {
     if (id) {
-      const { error } = await supabaseAdmin.from('mechanics').update(payload).eq('id', id);
-      if (error) throw new Error(error.message);
+      await updateMechanic(id, payload);
     } else {
-      const { error } = await supabaseAdmin.from('mechanics').insert(payload);
-      if (error) throw new Error(error.message);
+      await createMechanic(payload);
     }
     
     revalidatePath('/equipamiento-servicios/asesoramiento');
@@ -91,8 +90,7 @@ export async function deleteMechanic(id: string) {
         return { success: false, message: "ID de mecánico no proporcionado." };
     }
     try {
-        const { error } = await supabaseAdmin.from('mechanics').delete().eq('id', id);
-        if (error) throw error;
+        await deleteMechanicFromFirebase(id);
         
         revalidatePath('/admin/mechanics');
         revalidatePath('/equipamiento-servicios/asesoramiento');

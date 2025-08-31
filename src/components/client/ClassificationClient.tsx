@@ -123,7 +123,8 @@ function CategoryClassification({ categoryName, podiums }: CategoryClassificatio
 
 export default function ClassificationClient({ events, initialGroupedPodiums }: ClassificationClientProps) {
   // Elegimos por defecto el primer evento que tenga podios
-  const defaultEventId = events.find(e => Array.isArray(e.podiums) && e.podiums.length > 0)?.id || events[0]?.id || '';
+  const eventWithPodiums = events.find(e => Array.isArray(e.podiums) && e.podiums.length > 0);
+  const defaultEventId = eventWithPodiums?.id || events[0]?.id || '';
   const [selectedEventId, setSelectedEventId] = useState<string>(defaultEventId);
 
   const groupedPodiums = useMemo(() => {
@@ -146,11 +147,13 @@ export default function ClassificationClient({ events, initialGroupedPodiums }: 
                 <SelectValue placeholder="Selecciona un Evento" />
               </SelectTrigger>
               <SelectContent>
-                {events.map(event => (
-                  <SelectItem key={event.id} value={event.id}>
-                    {event.name} - {new Date(event.event_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </SelectItem>
-                ))}
+                {events
+                  .filter(event => Array.isArray(event.podiums) && event.podiums.length > 0)
+                  .map(event => (
+                    <SelectItem key={event.id} value={event.id}>
+                      {event.name} - {new Date(event.event_date).toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
