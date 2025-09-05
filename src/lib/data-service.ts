@@ -1169,4 +1169,3 @@ export async function getProductById(id: string) {
     return null;
   }
 }
-

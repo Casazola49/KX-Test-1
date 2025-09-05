@@ -272,15 +272,12 @@ export interface LiveStream {
 export interface Mechanic {
   id: string;
   name: string;
-  description?: string;
-  phone?: string;
-  email?: string;
-  service_area?: string;
-  avatar_url?: string;
-  image_url?: string;
-  website_url?: string;
   department?: string;
-  created_at?: string;
+  website_url?: string;
+  image_url?: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NewsArticle {

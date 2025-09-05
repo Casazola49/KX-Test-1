@@ -24,10 +24,18 @@ import Image from 'next/image';
 const FormSchema = z.object({
   id: z.string().optional(),
   name: z.string().min(3, { message: 'El nombre debe tener al menos 3 caracteres.' }),
-  department: z.string().min(3, { message: 'Debes seleccionar un departamento.' }),
+  department: z.string().min(1, { message: 'Debes seleccionar un departamento.' }),
   description: z.string().optional(),
-  website_url: z.string().url().optional().or(z.literal('')),
-  image_url: z.string().url().optional().or(z.literal('')),
+  website_url: z.union([
+    z.string().url({ message: 'Debe ser una URL válida' }),
+    z.literal(''),
+    z.undefined()
+  ]).optional(),
+  image_url: z.union([
+    z.string().url({ message: 'Debe ser una URL válida' }),
+    z.literal(''),
+    z.undefined()
+  ]).optional(),
 });
 
 type FormValues = z.infer<typeof FormSchema>;

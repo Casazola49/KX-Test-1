@@ -28,16 +28,12 @@ const formatDateForInput = (date: Date) => {
 
 const podiumResultSchema = z.object({
   id: z.string().optional(),
-  pilotId: z.string().optional(),
+  pilotId: z.string().optional().default(''),
   isGuest: z.boolean().optional().default(false),
-  guestName: z.string().optional(),
-  resultValue: z.string().optional(),
-}).refine((val) => (val.isGuest ? !!val.guestName : !!val.pilotId), {
-  message: 'Debes seleccionar un piloto o marcar Invitado y escribir su nombre.',
-  path: ['pilotId'],
+  guestName: z.string().optional().default(''),
+  resultValue: z.string().optional().default(''),
 });
 
-// CHANGE 1: Allow a variable number of results
 const podiumSchema = z.object({
   id: z.string().optional(),
   categoryId: z.string().min(1, 'Debes seleccionar una categoría.'),
@@ -58,7 +54,12 @@ const eventFormSchema = z.object({
   // Campo fantasma que usamos solo para validar que ya existe imagen previa en modo edición
   existingPromotionalImage: z.string().optional(),
 }).refine(data => {
-    return (data as any).existingPromotionalImage || (data.promotionalImage && data.promotionalImage.length > 0);
+    // En modo edición, si ya existe una imagen, no requerir nueva
+    if (data.existingPromotionalImage && typeof data.existingPromotionalImage === 'string') {
+        return true;
+    }
+    // Si no hay imagen existente, requerir nueva imagen
+    return data.promotionalImage && data.promotionalImage.length > 0;
 }, {
     message: "La imagen promocional es requerida.",
     path: ["promotionalImage"],
@@ -101,7 +102,7 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
         eventTime: initialTime.substring(0, 5),
         trackId: eventToEdit.track_id,
         description: eventToEdit.description || '',
-        existingPromotionalImage: eventToEdit.promotional_image_url,
+        existingPromotionalImage: eventToEdit.promotional_image_url || '',
         // Mapear estructura de la BD -> estructura del formulario preservando IDs
         podiums: (eventToEdit.podiums || []).map((p: any) => ({
             id: p.id,
@@ -113,12 +114,20 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
               .sort((a: any, b: any) => a.position - b.position)
               .map((r: any) => ({
                 id: r.id,
-                pilotId: r.pilot_id,
+                pilotId: r.pilot_id || '',
+                isGuest: !r.pilot_id && !!r.guest_name,
+                guestName: r.guest_name || '',
                 resultValue: r.result_value ?? '',
               })),
         })),
     } : {
-        name: '', eventDate: '', eventTime: '09:00', trackId: '', description: '', podiums: [],
+        name: '', 
+        eventDate: '', 
+        eventTime: '09:00', 
+        trackId: '', 
+        description: '', 
+        podiums: [],
+        existingPromotionalImage: '',
     },
   });
 
@@ -133,6 +142,22 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
     });
 
   async function onSubmit(data: EventFormValues) {
+    console.log('Submitting form data:', data);
+    
+    // Validación básica
+    if (data.podiums && data.podiums.length > 0) {
+      for (const podium of data.podiums) {
+        if (!podium.categoryId) {
+          toast({
+            title: "Error",
+            description: "Todos los podios deben tener una categoría seleccionada.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+    }
+
     const formData = new FormData();
     const combinedDateTime = `${data.eventDate}T${data.eventTime}:00`;
     
@@ -144,8 +169,18 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
     if (data.promotionalImage && data.promotionalImage.length > 0) {
         formData.append('promotionalImage', data.promotionalImage[0]);
     }
+    
+    // Enviar la URL de la imagen existente si estamos en modo edición
+    if (isEditMode && data.existingPromotionalImage) {
+        formData.append('existingPromotionalImageUrl', data.existingPromotionalImage);
+    }
     if (data.galleryImages && data.galleryImages.length > 0) {
         data.galleryImages.forEach((file: File) => formData.append('galleryImages', file));
+    }
+    
+    // Enviar las URLs de galería existentes si estamos en modo edición
+    if (isEditMode && eventToEdit.gallery_image_urls) {
+        formData.append('existingGalleryUrls', JSON.stringify(eventToEdit.gallery_image_urls));
     }
     
     // CHANGE 2: Add position to each result before stringifying
@@ -178,9 +213,34 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
 
     const onFormError = (errors: FieldErrors<EventFormValues>) => {
         console.error("Form validation errors:", errors);
+        console.error("Current form values:", form.getValues());
+        
+        // Crear mensaje específico basado en los errores
+        let errorMessage = "Revisa los campos marcados en rojo.";
+        
+        if (errors.podiums) {
+            errorMessage += " Problemas encontrados en los podios.";
+        }
+        
+        if (errors.promotionalImage) {
+            errorMessage += " Falta la imagen promocional.";
+        }
+        
+        if (errors.name) {
+            errorMessage += " El nombre del evento es requerido.";
+        }
+        
+        if (errors.eventDate) {
+            errorMessage += " La fecha del evento es requerida.";
+        }
+        
+        if (errors.trackId) {
+            errorMessage += " Debes seleccionar una pista.";
+        }
+        
         toast({
             title: "Hay errores en el formulario",
-            description: "Revisa los campos marcados en rojo. Asegúrate de que todos los podios tengan al menos un resultado.",
+            description: errorMessage,
             variant: "destructive",
         });
     };
@@ -202,61 +262,124 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
             <div className="mt-4 space-y-4">
                 <div className="flex justify-between items-center">
                     <h4 className="font-semibold">Resultados</h4>
-                    <Button type="button" size="sm" variant="outline" onClick={() => appendResult({ pilotId: '', isGuest: false, guestName: '', resultValue: '' })}>
+                    <Button 
+                        type="button" 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => appendResult({ 
+                            pilotId: '', 
+                            isGuest: false, 
+                            guestName: '', 
+                            resultValue: '' 
+                        })}
+                    >
                         <PlusCircle className="mr-2 h-4 w-4"/> Añadir Piloto
                     </Button>
                 </div>
                 {resultsFields.map((field, resultIndex) => (
                     <div key={field.id} className="grid grid-cols-1 md:grid-cols-[1fr,1fr,auto] gap-4 items-end">
-                        <Controller control={form.control} name={`podiums.${podiumIndex}.results.${resultIndex}.pilotId`} render={({ field: fieldPilot }) => (
-                            <FormItem>
-                                <FormLabel>Puesto {resultIndex + 1}</FormLabel>
-                                {/* Toggle de piloto invitado */}
-                                <div className="flex items-center gap-3 mb-2">
-                                  <Switch
-                                    checked={form.watch(`podiums.${podiumIndex}.results.${resultIndex}.isGuest`) || false}
-                                    onCheckedChange={(checked) => {
-                                      form.setValue(`podiums.${podiumIndex}.results.${resultIndex}.isGuest`, checked);
-                                      if (checked) {
-                                        form.setValue(`podiums.${podiumIndex}.results.${resultIndex}.pilotId`, '');
-                                      }
-                                    }}
-                                  />
-                                  <span className="text-sm">Piloto invitado (no registrado)</span>
-                                </div>
-                                {!form.watch(`podiums.${podiumIndex}.results.${resultIndex}.isGuest`) ? (
-                                  <Select onValueChange={fieldPilot.onChange} value={fieldPilot.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecciona un piloto" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                      {sortedPilots.map((p) => (
-                                        <SelectItem key={p.id} value={p.id}>{p.fullName}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                ) : (
-                                  <Controller
-                                    control={form.control}
-                                    name={`podiums.${podiumIndex}.results.${resultIndex}.guestName`}
-                                    render={({ field: guestField }) => (
-                                      <Input placeholder="Nombre completo del piloto invitado" {...guestField} />
+                        {/* Campo para piloto */}
+                        <FormField
+                            control={form.control}
+                            name={`podiums.${podiumIndex}.results.${resultIndex}.pilotId`}
+                            render={({ field: fieldPilot }) => (
+                                <FormItem>
+                                    <FormLabel>Puesto {resultIndex + 1}</FormLabel>
+                                    
+                                    {/* Switch para piloto invitado */}
+                                    <FormField
+                                        control={form.control}
+                                        name={`podiums.${podiumIndex}.results.${resultIndex}.isGuest`}
+                                        render={({ field: isGuestField }) => (
+                                            <div className="flex items-center gap-3 mb-2">
+                                                <Switch
+                                                    checked={isGuestField.value || false}
+                                                    onCheckedChange={(checked) => {
+                                                        isGuestField.onChange(checked);
+                                                        if (checked) {
+                                                            fieldPilot.onChange('');
+                                                        } else {
+                                                            form.setValue(`podiums.${podiumIndex}.results.${resultIndex}.guestName`, '');
+                                                        }
+                                                    }}
+                                                />
+                                                <span className="text-sm">Piloto invitado (no registrado)</span>
+                                            </div>
+                                        )}
+                                    />
+                                    
+                                    {/* Selector de piloto o input de invitado */}
+                                    {!form.watch(`podiums.${podiumIndex}.results.${resultIndex}.isGuest`) ? (
+                                        <Select onValueChange={fieldPilot.onChange} value={fieldPilot.value || ''}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Selecciona un piloto" />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {sortedPilots.map((p) => (
+                                                    <SelectItem key={p.id} value={p.id}>{p.fullName}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <FormField
+                                            control={form.control}
+                                            name={`podiums.${podiumIndex}.results.${resultIndex}.guestName`}
+                                            render={({ field: guestField }) => (
+                                                <FormControl>
+                                                    <Input 
+                                                        placeholder="Nombre completo del piloto invitado" 
+                                                        {...guestField} 
+                                                    />
+                                                </FormControl>
+                                            )}
+                                        />
                                     )}
-                                  />
-                                )}
-                                <FormMessage/>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  ¿No encuentras al piloto? Añádelo en otra pestaña:
-                                  <a href="/admin/add-pilot" target="_blank" rel="noopener noreferrer" className="underline ml-1">Crear piloto</a>
-                                </div>
-                            </FormItem>
-                        )} />
-                        <Controller control={form.control} name={`podiums.${podiumIndex}.results.${resultIndex}.resultValue`} render={({ field: fieldResult }) => (
-                            <FormItem>
-                                <FormLabel>Resultado ({form.watch(`podiums.${podiumIndex}.determinationMethod`) === 'TIEMPO' ? 'Tiempo' : 'Puntos'})</FormLabel>
-                                <Input placeholder={form.watch(`podiums.${podiumIndex}.determinationMethod`) === 'TIEMPO' ? 'Ej: 1:04.552' : 'Ej: 25'} {...fieldResult} />
-                                <FormMessage/>
-                            </FormItem>
-                        )} />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeResult(resultIndex)} className="self-center mb-1">
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        
+                        {/* Campo para resultado */}
+                        <FormField
+                            control={form.control}
+                            name={`podiums.${podiumIndex}.results.${resultIndex}.resultValue`}
+                            render={({ field: fieldResult }) => (
+                                <FormItem>
+                                    <FormLabel>
+                                        Resultado ({form.watch(`podiums.${podiumIndex}.determinationMethod`) === 'TIEMPO' ? 'Tiempo' : 'Puntos'})
+                                    </FormLabel>
+                                    <FormControl>
+                                        <Input 
+                                            placeholder={form.watch(`podiums.${podiumIndex}.determinationMethod`) === 'TIEMPO' ? 'Ej: 1:04.552' : 'Ej: 25'} 
+                                            {...fieldResult} 
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        
+                        {/* Botón eliminar */}
+                        <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => {
+                                if (resultsFields.length > 1) {
+                                    removeResult(resultIndex);
+                                } else {
+                                    toast({
+                                        title: "No se puede eliminar",
+                                        description: "Debe haber al menos un resultado en cada podio.",
+                                        variant: "destructive",
+                                    });
+                                }
+                            }} 
+                            className="self-center mb-1"
+                            disabled={resultsFields.length <= 1}
+                        >
                             <Trash2 className="h-4 w-4 text-red-500"/>
                         </Button>
                     </div>
@@ -267,7 +390,7 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit, onFormError)} className="space-y-8" noValidate>
         {/* --- Event Details Card (No changes here) --- */}
         <Card>
           <CardHeader><CardTitle>Detalles del Evento</CardTitle></CardHeader>
@@ -310,7 +433,22 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
             <CardHeader>
                 <div className="flex justify-between items-center">
                     <CardTitle>Gestión de Resultados por Categoría</CardTitle>
-                    <Button type="button" variant="outline" size="sm" onClick={() => append({ categoryId: '', podiumType: 'CLASIFICACION', determinationMethod: 'TIEMPO', results: [] })} >
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => append({ 
+                            categoryId: '', 
+                            podiumType: 'CLASIFICACION', 
+                            determinationMethod: 'TIEMPO', 
+                            results: [{ 
+                                pilotId: '', 
+                                isGuest: false, 
+                                guestName: '', 
+                                resultValue: '' 
+                            }] 
+                        })} 
+                    >
                         Añadir Categoría
                     </Button>
                 </div>
@@ -322,8 +460,50 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
                         {/* Preservar ID del podio para updates */}
                         <input type="hidden" {...form.register(`podiums.${index}.id` as const)} />
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                           <Controller control={form.control} name={`podiums.${index}.podiumType`} render={({ field: fieldType }) => ( <FormItem><FormLabel>Tipo de Resultado</FormLabel><Select onValueChange={(value) => handlePodiumTypeChange(value, index)} value={fieldType.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona un tipo" /></SelectTrigger></FormControl><SelectContent>{Object.entries(podiumTypeLabels).map(([key, label]) => ( <SelectItem key={key} value={key}>{label}</SelectItem> ))}</SelectContent></Select><FormMessage /></FormItem> )} />
-                           <Controller control={form.control} name={`podiums.${index}.categoryId`} render={({ field: fieldCategory }) => ( <FormItem><FormLabel>Categoría</FormLabel><Select onValueChange={fieldCategory.onChange} value={fieldCategory.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una categoría" /></SelectTrigger></FormControl><SelectContent>{categories.map((cat) => (<SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem> )}/>
+                           <Controller 
+                             control={form.control} 
+                             name={`podiums.${index}.podiumType`} 
+                             render={({ field: fieldType }) => ( 
+                               <FormItem>
+                                 <FormLabel>Tipo de Resultado</FormLabel>
+                                 <Select onValueChange={(value) => handlePodiumTypeChange(value, index)} value={fieldType.value} required>
+                                   <FormControl>
+                                     <SelectTrigger aria-label={`Tipo de resultado para podio ${index + 1}`}>
+                                       <SelectValue placeholder="Selecciona un tipo" />
+                                     </SelectTrigger>
+                                   </FormControl>
+                                   <SelectContent>
+                                     {Object.entries(podiumTypeLabels).map(([key, label]) => ( 
+                                       <SelectItem key={key} value={key}>{label}</SelectItem> 
+                                     ))}
+                                   </SelectContent>
+                                 </Select>
+                                 <FormMessage />
+                               </FormItem> 
+                             )} 
+                           />
+                           <Controller 
+                             control={form.control} 
+                             name={`podiums.${index}.categoryId`} 
+                             render={({ field: fieldCategory }) => ( 
+                               <FormItem>
+                                 <FormLabel>Categoría</FormLabel>
+                                 <Select onValueChange={fieldCategory.onChange} value={fieldCategory.value} required>
+                                   <FormControl>
+                                     <SelectTrigger aria-label={`Categoría para podio ${index + 1}`}>
+                                       <SelectValue placeholder="Selecciona una categoría" />
+                                     </SelectTrigger>
+                                   </FormControl>
+                                   <SelectContent>
+                                     {categories.map((cat) => (
+                                       <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                                     ))}
+                                   </SelectContent>
+                                 </Select>
+                                 <FormMessage />
+                               </FormItem> 
+                             )}
+                           />
                         </div>
                         {/* CHANGE 3: Use the new dynamic results component */}
                         <ResultsArray podiumIndex={index} />
@@ -332,9 +512,27 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
             </CardContent>
         </Card>
 
-        <Button type="submit" disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? (isEditMode ? 'Guardando...' : 'Creando...') : (isEditMode ? 'Guardar Cambios' : 'Crear Evento')}
-        </Button>
+        <div className="flex gap-4">
+          <Button type="submit" disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? (isEditMode ? 'Guardando...' : 'Creando...') : (isEditMode ? 'Guardar Cambios' : 'Crear Evento')}
+          </Button>
+          
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={() => {
+              console.log('Form values:', form.getValues());
+              console.log('Form errors:', form.formState.errors);
+              console.log('Form is valid:', form.formState.isValid);
+              toast({
+                title: "Debug Info",
+                description: "Revisa la consola para ver los datos del formulario",
+              });
+            }}
+          >
+            Debug
+          </Button>
+        </div>
       </form>
     </Form>
   );
