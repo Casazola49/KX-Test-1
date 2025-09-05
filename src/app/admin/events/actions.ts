@@ -43,24 +43,63 @@ const podiumSchema = z.object({
 
 // --- Lógica de Podios ---
 function processPodiums(podiumsJSON: string) {
-  if (!podiumsJSON) return [];
+  console.log('DEBUG - processPodiums called with:', podiumsJSON);
   
-  const podiums = JSON.parse(podiumsJSON) as z.infer<typeof podiumSchema>[];
-  if (!podiums) return [];
+  if (!podiumsJSON || podiumsJSON.trim() === '') {
+    console.log('DEBUG - No podiums JSON provided');
+    return [];
+  }
+  
+  let podiums;
+  try {
+    podiums = JSON.parse(podiumsJSON);
+  } catch (error) {
+    console.error('DEBUG - Error parsing podiums JSON:', error);
+    return [];
+  }
+  
+  if (!Array.isArray(podiums)) {
+    console.log('DEBUG - Podiums is not an array:', typeof podiums);
+    return [];
+  }
+
+  console.log('DEBUG - Raw podiums:', podiums);
 
   // Limpieza defensiva: filtrar podios sin categoría o sin resultados válidos
-  const cleanedPodiums = (podiums || [])
-    .filter(p => typeof p?.categoryId === 'string' && p.categoryId.trim().length > 0)
-    .map(p => ({
-      ...p,
-      results: (p.results || []).filter(r => {
+  const cleanedPodiums = podiums
+    .filter(p => {
+      const hasCategory = typeof p?.categoryId === 'string' && p.categoryId.trim().length > 0;
+      console.log(`DEBUG - Podium ${p?.id || 'new'} has category:`, hasCategory, p?.categoryId);
+      return hasCategory;
+    })
+    .map(p => {
+      const validResults = (p.results || []).filter(r => {
         const hasGuest = !!r.isGuest && !!(r.guestName && r.guestName.trim().length > 0);
         const hasPilot = !r.isGuest && !!(r.pilotId && String(r.pilotId).trim().length > 0);
-        return hasGuest || hasPilot;
-      })
-    }))
-    .filter(p => p.results.length > 0);
+        const isValid = hasGuest || hasPilot;
+        console.log(`DEBUG - Result validation:`, { 
+          isGuest: r.isGuest, 
+          guestName: r.guestName, 
+          pilotId: r.pilotId, 
+          isValid 
+        });
+        return isValid;
+      });
+      
+      console.log(`DEBUG - Podium ${p?.id || 'new'} valid results:`, validResults.length);
+      
+      return {
+        ...p,
+        results: validResults
+      };
+    })
+    .filter(p => {
+      const hasResults = p.results.length > 0;
+      console.log(`DEBUG - Podium ${p?.id || 'new'} has results:`, hasResults);
+      return hasResults;
+    });
 
+  console.log('DEBUG - Final cleaned podiums:', cleanedPodiums);
   return cleanedPodiums;
 }
 

@@ -92,13 +92,10 @@ export async function getNewsBySlug(slug: string): Promise<News | null> {
  */
 export async function getPodium() {
   try {
-    const { getEventWithPodiumsSimple } = await import('./data-service-simple');
+    const { getLatestEventWithPodiums } = await import('./data-service-simple');
     
-    // Los podiums están en la tabla 'events', no en 'raceevents'
-    // Usar el evento que sabemos que tiene podiums: "Clasificacion Sucre"
-    const eventId = '4442350b-4cb5-4af5-878b-cac38f84835d'; // ID de "Clasificacion Sucre"
-    
-    const eventWithPodiums = await getEventWithPodiumsSimple(eventId);
+    // Obtener automáticamente el último evento con podiums
+    const eventWithPodiums = await getLatestEventWithPodiums();
     
     if (eventWithPodiums && eventWithPodiums.podiums && eventWithPodiums.podiums.length > 0) {
       // Agrupar podiums por categoría

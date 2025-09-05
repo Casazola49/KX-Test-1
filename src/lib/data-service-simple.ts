@@ -100,3 +100,49 @@ export async function getEventWithPodiumsSimple(eventId: string) {
     return null;
   }
 }
+
+// Función para obtener el último evento con podiums
+export async function getLatestEventWithPodiums() {
+  try {
+    console.log('🔍 Getting latest event with podiums...');
+    
+    // 1. Obtener todos los eventos
+    const eventsSnapshot = await getDocs(collection(db, 'events'));
+    const events = eventsSnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    console.log(`📅 Found ${events.length} events`);
+
+    // 2. Ordenar eventos por fecha (más reciente primero)
+    const sortedEvents = events.sort((a, b) => {
+      const dateA = new Date(a.event_date || 0);
+      const dateB = new Date(b.event_date || 0);
+      return dateB.getTime() - dateA.getTime();
+    });
+
+    // 3. Buscar el primer evento que tenga podiums
+    for (const event of sortedEvents) {
+      console.log(`🔍 Checking event: ${event.name} (${event.event_date})`);
+      
+      // Verificar si este evento tiene podiums
+      const podiumsSnapshot = await getDocs(
+        query(collection(db, 'podiums'), where('event_id', '==', event.id))
+      );
+
+      if (podiumsSnapshot.size > 0) {
+        console.log(`✅ Found latest event with podiums: ${event.name}`);
+        // Usar la función existente para obtener el evento completo
+        return await getEventWithPodiumsSimple(event.id);
+      }
+    }
+
+    console.log('❌ No events with podiums found');
+    return null;
+
+  } catch (error) {
+    console.error('❌ Error in getLatestEventWithPodiums:', error);
+    return null;
+  }
+}

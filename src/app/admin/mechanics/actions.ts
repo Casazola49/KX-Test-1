@@ -11,14 +11,22 @@ import {
 
 // Zod Schema for server-side validation with robust URL handling
 const MechanicSchema = z.object({
-  id: z.string().uuid().optional().or(z.literal('')),
+  id: z.string().optional().or(z.literal('')),
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
-  department: z.string().min(3, { message: 'El departamento es requerido.' }),
+  department: z.string().min(1, { message: 'El departamento es requerido.' }),
   description: z.string().optional(),
   
-  // THE DEFINITIVE FIX: Explicitly allow an empty string OR a valid URL
-  website_url: z.string().url("La URL del sitio web no es válida.").or(z.literal('')),
-  image_url: z.string().url("La URL de la imagen no es válida.").or(z.literal('')),
+  // Allow empty string, undefined, or valid URL
+  website_url: z.union([
+    z.string().url("La URL del sitio web no es válida."),
+    z.literal(''),
+    z.undefined()
+  ]).optional(),
+  image_url: z.union([
+    z.string().url("La URL de la imagen no es válida."),
+    z.literal(''),
+    z.undefined()
+  ]).optional(),
 });
 
 export type MechanicFormState = {
@@ -35,12 +43,12 @@ export async function saveMechanic(
 ): Promise<MechanicFormState> {
   
   const dataToValidate = {
-    id: formData.get('id') || '',
-    name: formData.get('name') || '',
-    department: formData.get('department') || '',
-    description: formData.get('description') || '',
-    website_url: formData.get('website_url') || '',
-    image_url: formData.get('image_url') || '',
+    id: formData.get('id')?.toString() || '',
+    name: formData.get('name')?.toString() || '',
+    department: formData.get('department')?.toString() || '',
+    description: formData.get('description')?.toString() || '',
+    website_url: formData.get('website_url')?.toString() || '',
+    image_url: formData.get('image_url')?.toString() || '',
   };
 
   const validatedFields = MechanicSchema.safeParse(dataToValidate);
@@ -63,9 +71,9 @@ export async function saveMechanic(
   const payload: { [key: string]: any } = {};
   if (mechanicData.name) payload.name = mechanicData.name;
   if (mechanicData.department) payload.department = mechanicData.department;
-  if (mechanicData.description) payload.description = mechanicData.description;
-  if (mechanicData.website_url) payload.website_url = mechanicData.website_url;
-  if (mechanicData.image_url) payload.image_url = mechanicData.image_url;
+  if (mechanicData.description && mechanicData.description.trim()) payload.description = mechanicData.description;
+  if (mechanicData.website_url && mechanicData.website_url.trim()) payload.website_url = mechanicData.website_url;
+  if (mechanicData.image_url && mechanicData.image_url.trim()) payload.image_url = mechanicData.image_url;
 
   try {
     if (id) {

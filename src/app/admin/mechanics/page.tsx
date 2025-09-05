@@ -7,6 +7,7 @@ import PageTitle from '@/components/shared/PageTitle';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import Image from 'next/image';
 import { getAllMechanics } from '@/lib/data-service';
+import DeleteMechanicButton from '@/components/admin/DeleteMechanicButton';
 
 async function getMechanics(): Promise<Mechanic[]> {
   try {
@@ -56,7 +57,7 @@ export default async function AdminMechanicsPage() {
                      <Button variant="outline" size="sm" asChild>
                        <Link href={`/admin/mechanics/edit/${mechanic.id}`}>Editar</Link>
                      </Button>
-                     {/* Delete button would go here, implemented with a client component */}
+                     <DeleteMechanicButton mechanicId={mechanic.id} mechanicName={mechanic.name} />
                   </div>
                 </div>
               ))
