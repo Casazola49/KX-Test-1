@@ -4,14 +4,18 @@ import { notFound } from 'next/navigation';
 import { 
   getEventWithPodiums, 
   getAllTracks, 
-  getAllPilots, 
-  getAllCategories 
+  getAllPilots,
+  getAllCategories
 } from '@/lib/data-service';
+import { ensureCategoriesExist } from '@/lib/init-categories';
 
 export const revalidate = 0;
 
 export default async function EditEventPage({ params }: { params: { id: string } }) {
   try {
+    // Asegurar que las categorías existan en Firebase
+    await ensureCategoriesExist();
+    
     const [
       tracks,
       pilots,

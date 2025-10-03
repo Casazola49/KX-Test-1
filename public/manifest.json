@@ -81,7 +81,7 @@
       "name": "Próximas Carreras",
       "short_name": "Carreras",
       "description": "Ver las próximas carreras de karting",
-      "url": "/calendario",
+      "url": "/eventos",
       "icons": [
         {
           "src": "/icons/calendar-icon.png",

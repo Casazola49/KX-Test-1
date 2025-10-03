@@ -13,7 +13,34 @@ interface RaceCardProps {
 
 export default function RaceCard({ race }: RaceCardProps) {
   const raceDate = new Date(race.date);
-  const isPast = raceDate < new Date();
+  const raceEndDate = (race as any).event_end_date ? new Date((race as any).event_end_date) : null;
+  const now = new Date();
+  
+  // Determinar el estado del evento
+  let eventStatus: 'upcoming' | 'live' | 'finished' = 'upcoming';
+  let statusLabel = 'Próximo';
+  let statusVariant: 'default' | 'destructive' | 'secondary' = 'default';
+  
+  if (raceEndDate) {
+    if (now >= raceDate && now <= raceEndDate) {
+      eventStatus = 'live';
+      statusLabel = 'En Vivo';
+      statusVariant = 'secondary';
+    } else if (now > raceEndDate) {
+      eventStatus = 'finished';
+      statusLabel = 'Finalizado';
+      statusVariant = 'destructive';
+    }
+  } else {
+    // Fallback al comportamiento anterior si no hay fecha de finalización
+    if (now > raceDate) {
+      eventStatus = 'finished';
+      statusLabel = 'Finalizado';
+      statusVariant = 'destructive';
+    }
+  }
+  
+  const isPast = eventStatus === 'finished';
   
   // Find the official podium, which has a specific type
   const officialPodium = race.podiums?.find(p => p.podium_type === 'PODIO_OFICIAL_DEFINITIVO');
@@ -35,8 +62,8 @@ export default function RaceCard({ race }: RaceCardProps) {
           <div className="flex-grow">
             <div className="flex justify-between items-start">
               <h3 className="text-2xl font-bold font-headline">{race.name}</h3>
-              <Badge variant={isPast ? 'destructive' : 'default'}>
-                {isPast ? 'Finalizado' : 'Próximo'}
+              <Badge variant={statusVariant} className={eventStatus === 'live' ? 'bg-green-500 text-white animate-pulse' : ''}>
+                {statusLabel}
               </Badge>
             </div>
             <div className="flex items-center text-muted-foreground mt-2 text-sm">
@@ -74,7 +101,7 @@ export default function RaceCard({ race }: RaceCardProps) {
 
           <div className="mt-4 text-right">
             <Button asChild>
-              <Link href={`/calendario/${race.id}`}>
+              <Link href={`/eventos/${race.id}`}>
                 {isPast ? 'Ver Resultados Completos' : 'Ver Detalles'}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>

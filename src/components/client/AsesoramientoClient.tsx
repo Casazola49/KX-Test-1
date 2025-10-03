@@ -68,12 +68,21 @@ const AnimatedTitle = ({ title }: { title: string }) => {
 
 
 // --- Main Asesoramiento Client Component ---
-const allDepartments = ['Servicio Internacional', 'Cochabamba', 'La Paz', 'Santa Cruz', 'Oruro', 'Potosi', 'Chuquisaca', 'Tarija'];
+const allDepartments = ['General', 'Cochabamba', 'La Paz', 'Santa Cruz', 'Oruro', 'Potosi', 'Chuquisaca', 'Tarija'];
 
 export default function AsesoramientoClient({ mechanics }: { mechanics: Mechanic[] }) {
-  const [selectedDept, setSelectedDept] = useState('Servicio Internacional');
+  const [selectedDept, setSelectedDept] = useState('General');
 
-  const filteredMechanics = mechanics.filter(m => m.department === selectedDept);
+  // Aplicar la misma lógica que en equipamiento:
+  // - Si es "General", mostrar todos los mecánicos
+  // - Si es departamento específico, mostrar mecánicos del departamento + mecánicos de "General"
+  const filteredMechanics = mechanics.filter(m => {
+    if (selectedDept === 'General') {
+      return true; // Mostrar todos los mecánicos
+    } else {
+      return m.department === selectedDept || m.department === 'General';
+    }
+  });
 
   const listVariants: Variants = { hidden: { opacity: 0 }, visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } } };
   const cardVariants: Variants = { hidden: { opacity: 0, y: 100, scale: 0.7 }, visible: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 120, damping: 25 } }, exit: { opacity: 0, y: -50, scale: 0.9 } };

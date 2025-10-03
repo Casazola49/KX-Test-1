@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { saveGalleryItem } from '@/app/admin/gallery/actions';
-import type { GalleryItem, RaceEvent } from "@/lib/types";
+import type { GalleryItem } from "@/lib/types";
 import { uploadToCloudinary } from '@/lib/cloudinary';
 import {
   Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage
@@ -37,7 +37,6 @@ const FormSchema = z.object({
   title: z.string().min(3, "El título es obligatorio y debe tener al menos 3 caracteres."),
   description: z.string().optional(),
   alt: z.string().optional(),
-  eventId: z.string(),
   tags: z.string().optional(),
 });
 
@@ -45,10 +44,9 @@ type FormValues = z.infer<typeof FormSchema>;
 
 interface GalleryItemFormProps {
     item?: GalleryItem;
-    events: RaceEvent[];
 }
 
-export default function GalleryItemForm({ item, events }: GalleryItemFormProps) {
+export default function GalleryItemForm({ item }: GalleryItemFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,7 +61,6 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
       title: item?.title || "",
       description: item?.description || "",
       alt: item?.description || item?.title || "",
-      eventId: item?.eventId || 'none',
       tags: item?.tags?.join(', ') || '',
     },
   });
@@ -109,7 +106,6 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
         src: imageUrl,
          description: data.description,
          alt: data.alt && data.alt.trim().length > 0 ? data.alt : data.title,
-        eventId: data.eventId === 'none' ? null : data.eventId,
         tags: data.tags ? data.tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
          type: 'image',
       };
@@ -180,31 +176,7 @@ export default function GalleryItemForm({ item, events }: GalleryItemFormProps) 
           )}
         />
 
-        <FormField
-          control={form.control}
-          name="eventId"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Evento Asociado (Opcional)</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un evento..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="none">Sin evento asociado</SelectItem>
-                  {events.map(e => (
-                    <SelectItem key={e.id} value={e.id}>
-                      {e.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         
         <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
           {isSubmitting ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Guardando...</> : (isEditing ? "Actualizar Elemento" : "Añadir a Galería")}

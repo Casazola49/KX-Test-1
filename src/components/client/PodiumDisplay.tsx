@@ -5,6 +5,8 @@ import type { FullPodium } from '@/lib/types';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 interface PodiumDisplayProps {
     podium: FullPodium;
@@ -32,10 +34,14 @@ const PodiumCard = ({ result, position, determinationMethod }: { result: FullPod
 
     const cardSizeClass = "min-h-[420px] md:min-h-[480px]";
     const firstPlaceEffect = position === 1 ? 'scale-105 hover:scale-110 z-10' : 'hover:scale-105';
+    
+    // Si el piloto está registrado, hacer la tarjeta clickeable
+    const isClickable = pilot && pilot.slug;
+    const hoverEffect = isClickable ? 'cursor-pointer hover:shadow-3xl' : '';
 
-    return (
+    const cardContent = (
         <div 
-            className={`relative rounded-2xl shadow-2xl overflow-hidden text-white transition-transform duration-300 ease-in-out transform ${cardSizeClass} ${firstPlaceEffect}`}
+            className={`relative rounded-2xl shadow-2xl overflow-hidden text-white transition-transform duration-300 ease-in-out transform ${cardSizeClass} ${firstPlaceEffect} ${hoverEffect}`}
             style={backgroundStyle}
         >
             <div className="p-6 flex flex-col justify-between items-center h-full relative z-10">
@@ -73,10 +79,23 @@ const PodiumCard = ({ result, position, determinationMethod }: { result: FullPod
             <div className="absolute inset-0 opacity-[3%]" style={{backgroundImage: 'url(/patterns/noise.svg)', backgroundSize: '300px'}}></div>
         </div>
     );
+
+    // Si el piloto está registrado, envolver en Link
+    if (isClickable) {
+        return (
+            <Link href={`/pilotos-equipos/${pilot.slug}`} className="block">
+                {cardContent}
+            </Link>
+        );
+    }
+
+    return cardContent;
 };
 
 
 export default function PodiumDisplay({ podium }: PodiumDisplayProps) {
+    const router = useRouter();
+    
     if (!podium || !podium.results || podium.results.length === 0) {
         return (
             <Card>
@@ -119,39 +138,53 @@ export default function PodiumDisplay({ podium }: PodiumDisplayProps) {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {others.map(result => (
-                                    <TableRow key={result.id} className="hover:bg-white/5">
-                                        <TableCell className="text-center font-bold text-lg">{result.position}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-4">
-                                                <div className="relative w-12 h-12 rounded-full overflow-hidden bg-black/30">
-                                                    {result.pilot ? (
-                                                        <Image
-                                                            src={result.pilot.imageUrl || '/pilotos/piloto.png'}
-                                                            alt={`Foto de ${result.pilot.firstName} ${result.pilot.lastName}`}
-                                                            fill
-                                                            style={{objectFit: 'cover'}}
-                                                            sizes="48px"
-                                                         />
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-lg font-bold">
-                                                            {(result.guest_name || 'G').slice(0,1)}
-                                                        </div>
-                                                    )}
+                                {others.map(result => {
+                                    const isClickable = result.pilot && result.pilot.slug;
+                                    
+                                    const handleRowClick = () => {
+                                        if (isClickable) {
+                                            router.push(`/pilotos-equipos/${result.pilot.slug}`);
+                                        }
+                                    };
+
+                                    return (
+                                        <TableRow 
+                                            key={result.id} 
+                                            className={`hover:bg-white/5 ${isClickable ? 'cursor-pointer' : ''}`}
+                                            onClick={handleRowClick}
+                                        >
+                                            <TableCell className="text-center font-bold text-lg">{result.position}</TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="relative w-12 h-12 rounded-full overflow-hidden bg-black/30">
+                                                        {result.pilot ? (
+                                                            <Image
+                                                                src={result.pilot.imageUrl || '/pilotos/piloto.png'}
+                                                                alt={`Foto de ${result.pilot.firstName} ${result.pilot.lastName}`}
+                                                                fill
+                                                                style={{objectFit: 'cover'}}
+                                                                sizes="48px"
+                                                             />
+                                                        ) : (
+                                                            <div className="w-full h-full flex items-center justify-center text-lg font-bold">
+                                                                {(result.guest_name || 'G').slice(0,1)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                    <div>
+                                                        <div className="font-medium">{result.pilot ? `${result.pilot.firstName} ${result.pilot.lastName}` : (result.guest_name || 'Invitado')}</div>
+                                                        {result.pilot && (
+                                                            <div className="text-sm text-white/70 bg-black/20 px-2 py-0.5 rounded inline-block">
+                                                                 {result.pilot.teamName || 'Independiente'}{result.pilot.number ? ` - #${result.pilot.number}` : ''}
+                                                            </div>
+                                                        )}
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <div className="font-medium">{result.pilot ? `${result.pilot.firstName} ${result.pilot.lastName}` : (result.guest_name || 'Invitado')}</div>
-                                                    {result.pilot && (
-                                                        <div className="text-sm text-white/70 bg-black/20 px-2 py-0.5 rounded inline-block">
-                                                             {result.pilot.teamName || 'Independiente'}{result.pilot.number ? ` - #${result.pilot.number}` : ''}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-right font-mono">{result.result_value}</TableCell>
-                                    </TableRow>
-                                ))}
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono">{result.result_value}</TableCell>
+                                        </TableRow>
+                                    );
+                                })}
                             </TableBody>
                         </Table>
                     </CardContent>

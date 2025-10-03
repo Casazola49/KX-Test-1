@@ -3,7 +3,8 @@
 
 import { z } from 'zod';
 import { revalidatePath } from 'next/cache';
-import { createPilot as createPilotFirebase, updatePilot as updatePilotFirebase, deletePilot as deletePilotFirebase, getPilotBySlug, getAllCategories, getPilotById as getPilotByIdFirebase } from '@/lib/data-service';
+import { createPilot as createPilotFirebase, updatePilot as updatePilotFirebase, deletePilot as deletePilotFirebase, getPilotBySlug, getPilotById as getPilotByIdFirebase } from '@/lib/data-service';
+import { FIXED_CATEGORIES } from '@/lib/categories';
 import type { Pilot } from '@/lib/types';
 
 // Unified schema for data validation from the form
@@ -32,24 +33,18 @@ const PilotFormSchema = z.object({
   model_3d_url: z.string().url().optional().nullable(),
 });
 
-// Helper function to get category ID from its name using Firebase
-async function getCategoryIdByName(categoryName: string): Promise<string | null> {
+// Helper function to get category ID from its name using fixed categories
+function getCategoryIdByName(categoryName: string): string | null {
     if (!categoryName) return null;
     
-    try {
-        const categories = await getAllCategories();
-        const category = categories.find(cat => cat.name === categoryName);
-        
-        if (!category) {
-            console.error(`Could not find category with name "${categoryName}"`);
-            return null;
-        }
-
-        return category.id;
-    } catch (error) {
-        console.error(`Error fetching categories:`, error);
-        return null;
+    // Verificar que la categoría esté en la lista de categorías fijas
+    if (FIXED_CATEGORIES.includes(categoryName as any)) {
+        // Generar un ID consistente basado en el nombre
+        return categoryName.toLowerCase().replace(/\s+/g, '-');
     }
+    
+    console.error(`Category "${categoryName}" is not in the fixed categories list`);
+    return null;
 }
 
 
@@ -60,7 +55,7 @@ export async function createPilot(data: PilotFormData) {
         const validatedData = PilotFormSchema.parse(data);
 
         // Translate category name to category ID
-        const categoryId = await getCategoryIdByName(validatedData.category);
+        const categoryId = getCategoryIdByName(validatedData.category);
         if (!categoryId) {
             return { success: false, error: `La categoría "${validatedData.category}" no es válida o no fue encontrada.` };
         }
@@ -100,7 +95,7 @@ export async function updatePilot(id: string, data: PilotFormData) {
         const validatedData = PilotFormSchema.parse(data);
         
         // Translate category name to category ID
-        const categoryId = await getCategoryIdByName(validatedData.category);
+        const categoryId = getCategoryIdByName(validatedData.category);
         if (!categoryId) {
             return { success: false, error: `La categoría "${validatedData.category}" no es válida o no fue encontrada.` };
         }

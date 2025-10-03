@@ -26,26 +26,49 @@ const ChatMessageSchema = z.object({
 
 // --- Acción para Actualizar Configuración del Stream ---
 export async function updateLiveStreamSettings(formData: FormData): Promise<void> {
+  const iframe_url = formData.get('iframe_url') as string;
+  const stream_title = formData.get('stream_title') as string;
+  const is_live = formData.get('is_live') === 'on';
+
+  // Validar que si está activo, debe tener URL
+  if (is_live && (!iframe_url || iframe_url.trim() === '')) {
+    throw new Error('Debes proporcionar una URL de SpeedHive para activar la transmisión');
+  }
+
+  // Validar formato de URL de SpeedHive si se proporciona
+  if (iframe_url && iframe_url.trim() !== '') {
+    if (!iframe_url.includes('speedhive.mylaps.com') && !iframe_url.includes('mylaps.com')) {
+      throw new Error('La URL debe ser de SpeedHive/MyLaps (speedhive.mylaps.com)');
+    }
+  }
+
   const validatedFields = LiveStreamSchema.safeParse({
-    is_live: formData.get('is_live') === 'on',
-    stream_title: formData.get('stream_title') as string,
-    iframe_url: formData.get('iframe_url') as string,
+    is_live,
+    stream_title: stream_title || 'Transmisión en Vivo',
+    iframe_url: iframe_url || '',
   });
 
   if (!validatedFields.success) {
-    throw new Error(JSON.stringify(validatedFields.error.flatten().fieldErrors));
+    const errors = validatedFields.error.flatten().fieldErrors;
+    const errorMessage = Object.values(errors).flat().join(', ');
+    throw new Error(errorMessage || 'Error de validación');
   }
 
   try {
-    await updateLiveStreamConfig({
+    const result = await updateLiveStreamConfig({
       is_live: validatedFields.data.is_live,
       stream_title: validatedFields.data.stream_title,
       iframe_url: validatedFields.data.iframe_url,
     });
 
+    if (!result.success) {
+      throw new Error(result.error || 'Error al actualizar la configuración');
+    }
+
     revalidatePath('/live');
     revalidatePath('/admin/live');
   } catch (error: any) {
+    console.error('Error updating live stream settings:', error);
     throw new Error(`Error al actualizar: ${error.message}`);
   }
 }

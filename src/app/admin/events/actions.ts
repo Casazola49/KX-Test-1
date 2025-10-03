@@ -43,10 +43,7 @@ const podiumSchema = z.object({
 
 // --- Lógica de Podios ---
 function processPodiums(podiumsJSON: string) {
-  console.log('DEBUG - processPodiums called with:', podiumsJSON);
-  
   if (!podiumsJSON || podiumsJSON.trim() === '') {
-    console.log('DEBUG - No podiums JSON provided');
     return [];
   }
   
@@ -54,69 +51,46 @@ function processPodiums(podiumsJSON: string) {
   try {
     podiums = JSON.parse(podiumsJSON);
   } catch (error) {
-    console.error('DEBUG - Error parsing podiums JSON:', error);
+    console.error('Error parsing podiums JSON:', error);
     return [];
   }
   
   if (!Array.isArray(podiums)) {
-    console.log('DEBUG - Podiums is not an array:', typeof podiums);
     return [];
   }
-
-  console.log('DEBUG - Raw podiums:', podiums);
 
   // Limpieza defensiva: filtrar podios sin categoría o sin resultados válidos
   const cleanedPodiums = podiums
     .filter(p => {
       const hasCategory = typeof p?.categoryId === 'string' && p.categoryId.trim().length > 0;
-      console.log(`DEBUG - Podium ${p?.id || 'new'} has category:`, hasCategory, p?.categoryId);
       return hasCategory;
     })
     .map(p => {
       const validResults = (p.results || []).filter(r => {
         const hasGuest = !!r.isGuest && !!(r.guestName && r.guestName.trim().length > 0);
         const hasPilot = !r.isGuest && !!(r.pilotId && String(r.pilotId).trim().length > 0);
-        const isValid = hasGuest || hasPilot;
-        console.log(`DEBUG - Result validation:`, { 
-          isGuest: r.isGuest, 
-          guestName: r.guestName, 
-          pilotId: r.pilotId, 
-          isValid 
-        });
-        return isValid;
+        return hasGuest || hasPilot;
       });
-      
-      console.log(`DEBUG - Podium ${p?.id || 'new'} valid results:`, validResults.length);
       
       return {
         ...p,
         results: validResults
       };
     })
-    .filter(p => {
-      const hasResults = p.results.length > 0;
-      console.log(`DEBUG - Podium ${p?.id || 'new'} has results:`, hasResults);
-      return hasResults;
-    });
-
-  console.log('DEBUG - Final cleaned podiums:', cleanedPodiums);
+    .filter(p => p.results.length > 0);
   return cleanedPodiums;
 }
 
 // --- Acciones Principales ---
 export async function createEventWithPodiums(formData: FormData) {
-  console.log('DEBUG - createEventWithPodiums called');
   try {
     const promotionalImage = formData.get('promotionalImage') as File;
-    console.log('DEBUG - promotionalImage:', promotionalImage ? `${promotionalImage.name} (${promotionalImage.size} bytes)` : 'null');
     
     if (!promotionalImage || promotionalImage.size === 0) {
       return { success: false, message: 'La imagen promocional es obligatoria.' };
     }
     
-    console.log('DEBUG - Uploading promotional image...');
     const promotionalImageUrl = await uploadFile(promotionalImage, 'events');
-    console.log('DEBUG - promotionalImageUrl:', promotionalImageUrl);
 
     if (!promotionalImageUrl) {
       return { success: false, message: 'Error al subir la imagen promocional a Cloudinary.' };
@@ -129,17 +103,15 @@ export async function createEventWithPodiums(formData: FormData) {
     const eventData = {
       name: formData.get('name') as string,
       event_date: formData.get('eventDateTime') as string,
+      event_end_date: formData.get('eventEndDateTime') as string,
       track_id: formData.get('trackId') as string,
       description: formData.get('description') as string,
       promotional_image_url: promotionalImageUrl,
       gallery_image_urls: galleryImageUrls,
     };
 
-    console.log('DEBUG - eventData:', eventData);
-
     const podiumsJSON = formData.get('podiums') as string;
     const podiums = processPodiums(podiumsJSON);
-    console.log('DEBUG - About to call processPodiums with JSON:', podiumsJSON);
     
     const result = await createEventFirebase(eventData, podiums);
     
@@ -148,7 +120,7 @@ export async function createEventWithPodiums(formData: FormData) {
     }
 
     revalidatePath('/admin/events');
-    revalidatePath('/calendario');
+    revalidatePath('/eventos');
 
     return { success: true, message: 'Evento creado con éxito.' };
   } catch (error) {
@@ -178,6 +150,7 @@ export async function updateEventWithPodiums(eventId: string, formData: FormData
         const eventData = {
             name: formData.get('name') as string,
             event_date: formData.get('eventDateTime') as string,
+            event_end_date: formData.get('eventEndDateTime') as string,
             track_id: formData.get('trackId') as string,
             description: formData.get('description') as string,
             promotional_image_url: promotionalImageUrl,
@@ -195,8 +168,8 @@ export async function updateEventWithPodiums(eventId: string, formData: FormData
 
         revalidatePath('/admin/events');
         revalidatePath(`/admin/events/edit/${eventId}`);
-        revalidatePath('/calendario');
-        revalidatePath(`/calendario/${eventId}`);
+        revalidatePath('/eventos');
+        revalidatePath(`/eventos/${eventId}`);
 
         return { success: true, message: 'Evento actualizado con éxito.' };
     } catch (error) {
@@ -214,7 +187,7 @@ export async function deleteEvent(eventId: string) {
     }
 
     revalidatePath('/admin/events');
-    revalidatePath('/calendario');
+    revalidatePath('/eventos');
     return { success: true };
   } catch (error: any) {
     console.error('Error deleting event:', error);

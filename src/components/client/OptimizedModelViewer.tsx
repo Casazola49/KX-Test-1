@@ -1,9 +1,36 @@
 "use client";
 
-import React, { Suspense, useEffect, useState, useMemo, useRef } from 'react';
+import React, { Suspense, useEffect, useState, useMemo, useRef, Component } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Bounds, Center, Html, useProgress } from '@react-three/drei';
 import { Loader, Wifi, WifiOff } from 'lucide-react';
+
+// ErrorBoundary para capturar errores en el modelo 3D
+class ErrorBoundary extends Component<
+  { children: React.ReactNode; onError: () => void },
+  { hasError: boolean }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('Error en modelo 3D:', error, errorInfo);
+    this.props.onError();
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return null;
+    }
+    return this.props.children;
+  }
+}
 
 // Hook para detectar la calidad de conexión
 const useConnectionQuality = () => {
@@ -57,10 +84,20 @@ const LoadingProgress = () => {
 
 // Componente de modelo optimizado con LOD (Level of Detail)
 const OptimizedModel = ({ url, quality = 'high' }: { url: string; quality?: 'low' | 'medium' | 'high' }) => {
-  const { scene } = useGLTF(url);
   const modelRef = useRef<any>();
   
+  let scene;
+  try {
+    const gltf = useGLTF(url);
+    scene = gltf.scene;
+  } catch (error) {
+    console.error('Error loading GLTF model:', error);
+    throw error;
+  }
+  
   const optimizedScene = useMemo(() => {
+    if (!scene) return null;
+    
     const clonedScene = scene.clone();
     
     clonedScene.traverse((child: any) => {
@@ -95,6 +132,8 @@ const OptimizedModel = ({ url, quality = 'high' }: { url: string; quality?: 'low
     
     return clonedScene;
   }, [scene, quality]);
+
+  if (!optimizedScene) return null;
 
   return (
     <Center position={[0, 0, 0]}>
@@ -257,8 +296,14 @@ const OptimizedModelViewer: React.FC<OptimizedModelViewerProps> = ({
           stencil: false,
           depth: true
         }}
-        onCreated={() => setIsLoading(false)}
-        onError={() => setHasError(true)}
+        onCreated={() => {
+          console.log('✅ Canvas 3D creado correctamente');
+          setIsLoading(false);
+        }}
+        onError={(error) => {
+          console.error('❌ Error en Canvas 3D:', error);
+          setHasError(true);
+        }}
         performance={{
           min: quality === 'low' ? 0.2 : 0.5,
           max: quality === 'high' ? 1 : 0.8,
@@ -287,9 +332,11 @@ const OptimizedModelViewer: React.FC<OptimizedModelViewerProps> = ({
         )}
 
         <Suspense fallback={<LoadingProgress />}>
-          <Bounds fit clip observe margin={1.5}>
-            <OptimizedModel url={modelUrl} quality={quality} />
-          </Bounds>
+          <ErrorBoundary onError={() => setHasError(true)}>
+            <Bounds fit clip observe margin={1.5}>
+              <OptimizedModel url={modelUrl} quality={quality} />
+            </Bounds>
+          </ErrorBoundary>
         </Suspense>
 
         <OptimizedCameraController quality={quality} />

@@ -3,7 +3,7 @@ import Section from '@/components/shared/Section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Users, MapPin, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
-import AdBanner from '@/components/shared/AdBanner';
+import ServerHorizontalAd from '@/components/shared/ServerHorizontalAd';
 
 const currentPanoramaPoints = [
   {
@@ -169,7 +169,7 @@ export default function PanoramaActualPage() {
           <em>Esta sección está en constante actualización para reflejar los últimos acontecimientos del karting en Bolivia.</em>
         </p>
 
-        <AdBanner />
+        <ServerHorizontalAd section="informacion-panorama-actual" />
       </Section>
     </>
   );

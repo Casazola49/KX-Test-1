@@ -4,7 +4,7 @@ import Section from '@/components/shared/Section';
 import { Button } from '@/components/ui/button';
 import { FileText, Download } from 'lucide-react';
 import HybridPdfViewer from '@/components/client/HybridPdfViewer';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import React from 'react';
 
 const regulations = [
@@ -88,12 +88,12 @@ export default function ReglamentoPage() {
 
               </div>
               {/* Insert ad banner after the middle item */}
-              {index === middleIndex - 1 && <AdBanner />}
+              {index === middleIndex - 1 && <HorizontalAd section="reglamento" />}
             </React.Fragment>
           ))}
         </div>
 
-        <AdBanner />
+        <HorizontalAd section="reglamento" />
 
         <div className="mt-12 text-center p-6 bg-card rounded-lg border border-border">
           <h3 className="text-xl font-semibold mb-2">Nota Importante</h3>

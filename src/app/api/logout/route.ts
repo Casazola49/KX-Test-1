@@ -7,9 +7,16 @@ export async function POST(request: NextRequest) {
   try {
     const response = NextResponse.json({ success: true, message: 'Sesión cerrada.' });
 
-    // Elimina la cookie estableciendo su maxAge a -1
+    // Elimina ambas cookies estableciendo su maxAge a -1
     response.cookies.set('admin-token', '', {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: -1, // Instrucción para que el navegador la elimine
+      path: '/',
+    });
+
+    response.cookies.set('admin-auth', '', {
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       maxAge: -1, // Instrucción para que el navegador la elimine
       path: '/',

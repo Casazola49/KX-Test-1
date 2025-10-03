@@ -7,14 +7,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { uploadToCloudinary } from '@/lib/cloudinary';
+import { uploadToFirebaseStorage, validateModelFile } from '@/lib/firebase-storage';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UploadCloud } from 'lucide-react';
 import type { Kart } from '@/lib/types';
 import { createKart, updateKart } from '@/app/admin/karts/actions';
+import { FIXED_CATEGORIES } from '@/lib/categories';
 
 // Esquema de validación del formulario
 const FormSchema = z.object({
@@ -47,33 +50,74 @@ export default function KartForm({ kart }: KartFormProps) {
     },
   });
 
-  // ... (handleFileChange y uploadModel se mantienen igual)
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file && file.name.endsWith('.glb')) {
-      setModelFile(file);
-      setModelFileName(file.name);
-    } else {
+    if (!file) return;
+    
+    // Validar el archivo
+    const validation = validateModelFile(file);
+    if (!validation.valid) {
       setModelFile(null);
       setModelFileName(null);
       toast({
         title: 'Archivo no válido',
-        description: 'Por favor, selecciona un archivo con formato .glb.',
+        description: validation.error,
         variant: 'destructive',
       });
+      return;
     }
+    
+    setModelFile(file);
+    setModelFileName(file.name);
+    toast({
+      title: 'Archivo seleccionado',
+      description: `${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`,
+    });
   };
 
   const uploadModel = async (): Promise<string> => {
     if (!modelFile) {
       throw new Error('No se ha seleccionado ningún archivo de modelo.');
     }
+    
     try {
-      const url = await uploadToCloudinary(modelFile, 'karts');
-      return url;
-    } catch (error) {
-      console.error('Error uploading to Cloudinary:', error);
-      throw new Error('Error al subir el modelo 3D');
+      console.log('🚀 Subiendo modelo 3D localmente...');
+      console.log(`📁 Archivo: ${modelFile.name}, Tamaño: ${(modelFile.size / 1024 / 1024).toFixed(2)}MB`);
+      
+      // Usar la API route que guarda archivos localmente en /public
+      const formData = new FormData();
+      formData.append('file', modelFile);
+      formData.append('folder', 'karts');
+
+      console.log('📤 Enviando solicitud a /api/upload-local...');
+
+      const response = await fetch('/api/upload-local', {
+        method: 'POST',
+        body: formData,
+      });
+
+      console.log(`📥 Respuesta recibida: ${response.status} ${response.statusText}`);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('❌ Error del servidor:', errorData);
+        throw new Error(errorData.error || `Error del servidor: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (!data.success) {
+        console.error('❌ Upload falló:', data);
+        throw new Error(data.error || 'Upload failed');
+      }
+
+      console.log('✅ Modelo subido exitosamente');
+      console.log('🔗 URL:', data.url);
+      return data.url;
+      
+    } catch (error: any) {
+      console.error('❌ Error completo:', error);
+      throw new Error(`Error al subir el modelo 3D: ${error.message}`);
     }
   };
 
@@ -145,9 +189,20 @@ export default function KartForm({ kart }: KartFormProps) {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Categoría</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Profesional" {...field} />
-                  </FormControl>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una categoría" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {FIXED_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
@@ -182,7 +237,7 @@ export default function KartForm({ kart }: KartFormProps) {
                     </label>
                     <p className="pl-1">o arrástralo aquí</p>
                   </div>
-                  <p className="text-xs leading-5 text-gray-600">Solo archivos .glb de hasta 10MB</p>
+                  <p className="text-xs leading-5 text-gray-600">Solo archivos .glb de hasta 50MB</p>
                   {modelFileName && <p className="text-sm font-semibold text-green-600 mt-2">{modelFileName}</p>}
                 </div>
               </div>

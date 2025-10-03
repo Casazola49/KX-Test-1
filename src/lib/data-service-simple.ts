@@ -12,24 +12,18 @@ import {
 // Función simplificada que no requiere índices
 export async function getEventWithPodiumsSimple(eventId: string) {
   try {
-    console.log('🔍 Getting event:', eventId);
-    
     // 1. Obtener el evento
     const eventDoc = await getDoc(doc(db, 'events', eventId));
     if (!eventDoc.exists()) {
-      console.log('❌ Event not found');
       return null;
     }
 
     const eventData = { id: eventDoc.id, ...eventDoc.data() };
-    console.log('✅ Event found:', eventData.name);
 
     // 2. Obtener todos los podiums (sin orderBy para evitar índices)
     const podiumsSnapshot = await getDocs(
       query(collection(db, 'podiums'), where('event_id', '==', eventId))
     );
-
-    console.log(`🏆 Found ${podiumsSnapshot.size} podiums`);
 
     const podiums = [];
     for (const podiumDoc of podiumsSnapshot.docs) {
@@ -89,14 +83,13 @@ export async function getEventWithPodiumsSimple(eventId: string) {
       }
     }
 
-    console.log(`✅ Returning event with ${podiums.length} podiums`);
     return {
       ...eventData,
       podiums
     };
 
   } catch (error) {
-    console.error('❌ Error in getEventWithPodiumsSimple:', error);
+    console.error('Error in getEventWithPodiumsSimple:', error);
     return null;
   }
 }

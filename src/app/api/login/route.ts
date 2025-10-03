@@ -14,9 +14,17 @@ export async function POST(request: NextRequest) {
 
     const response = NextResponse.json({ success: true, message: 'Sesión iniciada.' });
 
-    // Establece la cookie HttpOnly, segura.
+    // Establece la cookie HttpOnly, segura (para el servidor)
     response.cookies.set('admin-token', token, {
       httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: ONE_WEEK_IN_SECONDS,
+      path: '/',
+    });
+
+    // Establece una cookie adicional para verificación del cliente (sin datos sensibles)
+    response.cookies.set('admin-auth', 'true', {
+      httpOnly: false, // Accesible desde JavaScript
       secure: process.env.NODE_ENV === 'production',
       maxAge: ONE_WEEK_IN_SECONDS,
       path: '/',

@@ -31,7 +31,10 @@ export const COLLECTIONS = {
   LIVE_STREAMS: 'live_streams',
   
   // 3D Models
-  KARTS: 'karts'
+  KARTS: 'karts',
+  
+  // Advertising
+  ADVERTISEMENTS: 'advertisements'
 } as const;
 
 // Tipos basados en tu estructura actual
@@ -231,5 +234,18 @@ export interface KartModel {
   description?: string;
   model_url: string;
   created_at?: string;
+  updated_at?: string;
+}
+
+// Advertisement interface
+export interface Advertisement {
+  id: string;
+  name: string;
+  section: string;
+  type: 'horizontal' | 'popup';
+  image_url: string;
+  link_url?: string;
+  is_active: boolean;
+  created_at: string;
   updated_at?: string;
 }

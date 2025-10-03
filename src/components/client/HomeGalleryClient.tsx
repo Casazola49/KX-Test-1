@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import GalleryItem from '@/components/shared/GalleryItem';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import AdBanner from '@/components/shared/AdBanner';
+
 import { GalleryImage } from '@/lib/types';
 import Section from '@/components/shared/Section';
 import { getGalleryByType } from '@/lib/data-service';
@@ -87,7 +87,6 @@ export default function HomeGalleryClient() {
               </Button>
             </Link>
           </div>
-          <AdBanner />
         </>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
@@ -99,7 +98,6 @@ export default function HomeGalleryClient() {
               </Button>
             </Link>
           </div>
-          <AdBanner />
         </div>
       )}
     </Section>

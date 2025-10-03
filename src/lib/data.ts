@@ -9,6 +9,7 @@ export async function getEvents(): Promise<Event[]> {
   try {
     // Usar la tabla 'events' en lugar de 'raceevents' (donde están los podiums)
     const { getAllEvents } = await import('./data-service');
+    const { serializeFirebaseData } = await import('./serialize');
     const eventsData = await getAllEvents();
     
     // Mapear datos de Firebase al formato Event esperado
@@ -16,6 +17,7 @@ export async function getEvents(): Promise<Event[]> {
       id: item.id,
       name: item.name,
       date: item.event_date, // La tabla 'events' usa 'event_date'
+      event_end_date: item.event_end_date, // Incluir fecha de finalización
       promotionalImageUrl: item.promotional_image_url,
       trackName: item.track?.name || 'Pista por confirmar',
       track: {
@@ -25,7 +27,7 @@ export async function getEvents(): Promise<Event[]> {
       },
     }));
 
-    return events;
+    return serializeFirebaseData(events);
   } catch (error) {
     console.error('Error fetching events from Firebase:', error);
     return [];
@@ -93,6 +95,7 @@ export async function getNewsBySlug(slug: string): Promise<News | null> {
 export async function getPodium() {
   try {
     const { getLatestEventWithPodiums } = await import('./data-service-simple');
+    const { serializePodiumData } = await import('./serialize');
     
     // Obtener automáticamente el último evento con podiums
     const eventWithPodiums = await getLatestEventWithPodiums();
@@ -108,13 +111,14 @@ export async function getPodium() {
           groupedPodiums[categoryName] = [];
         }
         
-        groupedPodiums[categoryName].push(podium);
+        // Serializar cada podium antes de agregarlo
+        groupedPodiums[categoryName].push(serializePodiumData(podium));
       }
       
-      return {
+      return serializePodiumData({
         eventName: eventWithPodiums.name,
         podiums: groupedPodiums
-      };
+      });
     }
 
     // Si no se encuentra el evento con podiums, retornar estructura vacía

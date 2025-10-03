@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Image from 'next/image';
 import OptimizedModelViewer from '@/components/client/OptimizedModelViewer'; // Importamos el visor 3D optimizado
+import HorizontalAd from '@/components/shared/HorizontalAd';
 
 // Tipos para los datos
 interface KartPart {
@@ -129,6 +130,25 @@ const BASE_KART_COMPONENTS: KartPart[] = [
 ];
 
 
+// Mapeo de categorías a modelos locales en /public/kart
+const CATEGORY_MODEL_MAP: Record<string, string> = {
+  'F200 Super': '/kart/F200 super.glb',
+  'F200 Standard': '/kart/F200 Standard.glb',
+  'F200 SUPER': '/kart/F200 super.glb',
+  'F200 STANDARD': '/kart/F200 Standard.glb',
+  '125cc Profesional': '/kart/125 cc profesional.glb',
+  '125 CC PROFESIONAL': '/kart/125 cc profesional.glb',
+  '100cc Junior': '/kart/100 cc junior.glb',
+  '100 CC JUNIOR': '/kart/100 cc junior.glb',
+  'Mini 60': '/kart/mini 60.glb',
+  'MINI 60': '/kart/mini 60.glb',
+  'Infantil 6.5': '/kart/infantil 6.5.glb',
+  'INFANTIL 6.5': '/kart/infantil 6.5.glb',
+  'Baby Kart': '/kart/baby kart.glb',
+  'BABY KART': '/kart/baby kart.glb',
+  'default': '/kart/F200 Standard.glb'
+};
+
 const KartPage: NextPage = () => {
   const [showInstructions, setShowInstructions] = useState(true);
   const [kartCategories, setKartCategories] = useState<KartCategoryData[]>([]);
@@ -140,73 +160,113 @@ const KartPage: NextPage = () => {
     const fetchKarts = async () => {
       setLoading(true);
       
+      // Datos por defecto que siempre funcionan
+      const defaultCategories = [
+        {
+          name: 'Kart Estándar',
+          description: 'Kart básico para principiantes y competencia amateur',
+          modelUrl: '/kart/MarioKart.glb',
+          parts: BASE_KART_COMPONENTS
+        }
+      ];
+      
       try {
-        // Obtener karts desde Firebase usando el servicio de datos con carga optimizada
+        // Intentar obtener karts desde Firebase con timeout corto
         const { getAllKarts } = await import('@/lib/data-service');
         
-        // Usar Promise.race para timeout rápido si la conexión es lenta
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Timeout')), 5000)
+        const timeoutPromise = new Promise<any>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 3000)
         );
         
-        const karts = await Promise.race([getAllKarts(), timeoutPromise]);
+        const karts = await Promise.race([getAllKarts(), timeoutPromise]) as any[];
         
         console.log('🏎️ Karts obtenidos de Firebase:', karts);
         console.log('📊 Cantidad de karts:', karts?.length || 0);
         
-        if (karts && karts.length > 0) {
-          const categories = karts.map(kart => {
-            console.log('🔄 Procesando kart:', kart.name, 'Categoría:', kart.category, 'URL:', kart.model_url);
-            return {
-              name: kart.category,
-              description: kart.description || `Kart ${kart.category}`,
-              modelUrl: kart.model_url,
-              parts: BASE_KART_COMPONENTS
-            };
+        // Mostrar detalles de cada kart para diagnóstico
+        if (karts && Array.isArray(karts)) {
+          karts.forEach((kart, index) => {
+            console.log(`\n--- Kart ${index + 1} ---`);
+            console.log('ID:', kart.id);
+            console.log('Nombre:', kart.name);
+            console.log('Categoría:', kart.category);
+            console.log('URL del modelo:', kart.model_url);
+            console.log('Descripción:', kart.description);
+            
+            if (kart.model_url) {
+              if (kart.model_url.includes('supabase.co')) {
+                console.warn('⚠️ URL de Supabase detectada - NO FUNCIONA');
+              } else if (kart.model_url.includes('cloudinary.com')) {
+                console.log('✅ URL de Cloudinary - debería funcionar');
+              } else if (kart.model_url.startsWith('/')) {
+                console.log('✅ URL local - debería funcionar');
+              }
+            } else {
+              console.warn('⚠️ No hay URL de modelo');
+            }
           });
-          
-          console.log('📋 Categorías creadas:', categories);
-          setKartCategories(categories);
+        }
+        
+        if (karts && Array.isArray(karts) && karts.length > 0) {
+          const categories = karts
+            .filter(kart => kart && kart.category)
+            .map(kart => {
+              let modelUrl = kart.model_url;
+              
+              // Si la URL es de Supabase Storage o Firebase Storage (ya no accesibles), usar modelo local
+              if (modelUrl && (modelUrl.includes('supabase.co') || modelUrl.includes('firebasestorage'))) {
+                // Buscar modelo local basado en la categoría
+                const categoryKey = Object.keys(CATEGORY_MODEL_MAP).find(
+                  key => kart.category.toLowerCase().includes(key.toLowerCase()) || 
+                         key.toLowerCase().includes(kart.category.toLowerCase())
+                );
+                modelUrl = categoryKey ? CATEGORY_MODEL_MAP[categoryKey] : CATEGORY_MODEL_MAP['default'];
+                console.log(`🔄 Usando modelo local para ${kart.category}: ${modelUrl}`);
+              }
+              
+              // Si no hay URL o está vacía, usar modelo basado en categoría
+              if (!modelUrl || modelUrl.trim() === '') {
+                const categoryKey = Object.keys(CATEGORY_MODEL_MAP).find(
+                  key => kart.category.toLowerCase().includes(key.toLowerCase()) || 
+                         key.toLowerCase().includes(kart.category.toLowerCase())
+                );
+                modelUrl = categoryKey ? CATEGORY_MODEL_MAP[categoryKey] : CATEGORY_MODEL_MAP['default'];
+              }
+              
+              // Si la URL no empieza con / o http, añadir /
+              if (modelUrl && !modelUrl.startsWith('/') && !modelUrl.startsWith('http')) {
+                modelUrl = '/' + modelUrl;
+              }
+              
+              console.log(`✅ Categoría: ${kart.category}, Modelo: ${modelUrl}`);
+              
+              return {
+                name: kart.category || kart.name || 'Kart',
+                description: kart.description || `Kart ${kart.category || kart.name}`,
+                modelUrl: modelUrl,
+                parts: BASE_KART_COMPONENTS
+              };
+            });
           
           if (categories.length > 0) {
+            console.log('✅ Usando categorías de Firebase:', categories);
+            setKartCategories(categories);
             setSelectedCategoryName(categories[0].name);
-            
-            // Precargar solo el primer modelo para carga más rápida
-            if (categories[0].modelUrl) {
-              console.log('🎯 Precargando modelo:', categories[0].modelUrl);
-            }
+          } else {
+            console.log('⚠️ No hay categorías válidas, usando datos por defecto');
+            setKartCategories(defaultCategories);
+            setSelectedCategoryName(defaultCategories[0].name);
           }
         } else {
-          // Si no hay datos en Firebase, usar datos por defecto
-          const defaultCategories = [
-            {
-              name: 'Kart Estándar',
-              description: 'Kart básico para principiantes y competencia amateur',
-              modelUrl: '/kart/MarioKart.glb',
-              parts: BASE_KART_COMPONENTS
-            }
-          ];
+          console.log('ℹ️ No hay karts en Firebase, usando datos por defecto');
+          console.log('\n📝 NOTA: Para agregar karts, ve a /admin/karts');
           setKartCategories(defaultCategories);
           setSelectedCategoryName(defaultCategories[0].name);
         }
-      } catch (error) {
-        console.error('Error fetching karts:', error);
-        // Fallback rápido a datos por defecto en caso de error o timeout
-        const defaultCategories = [
-          {
-            name: 'Kart Estándar',
-            description: 'Kart básico para principiantes y competencia amateur',
-            modelUrl: '/kart/MarioKart.glb',
-            parts: BASE_KART_COMPONENTS
-          }
-        ];
+      } catch (error: any) {
+        console.warn('⚠️ Error al cargar karts de Firebase, usando datos por defecto:', error?.message);
         setKartCategories(defaultCategories);
         setSelectedCategoryName(defaultCategories[0].name);
-        
-        // Si fue un timeout, mostrar mensaje específico
-        if (error.message === 'Timeout') {
-          console.warn('⚠️ Carga de karts lenta, usando datos por defecto');
-        }
       } finally {
         setLoading(false);
       }
@@ -237,9 +297,23 @@ const KartPage: NextPage = () => {
 
   if (loading) {
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen">
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
             <Loader className="animate-spin h-12 w-12 text-primary" />
             <p className="mt-4 text-muted-foreground">Cargando datos de karts...</p>
+        </div>
+    );
+  }
+
+  // Si no hay categorías después de cargar, mostrar error
+  if (!kartCategories || kartCategories.length === 0) {
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+            <HelpCircle className="h-16 w-16 text-muted-foreground mb-4" />
+            <h2 className="text-2xl font-bold mb-2">No hay datos disponibles</h2>
+            <p className="text-muted-foreground mb-4">No se pudieron cargar los datos de karts.</p>
+            <Button onClick={() => window.location.reload()}>
+                Reintentar
+            </Button>
         </div>
     );
   }
@@ -316,6 +390,12 @@ const KartPage: NextPage = () => {
                                 className="object-contain"
                                 sizes="(max-width: 1023px) 100vw, 33vw"
                                 data-ai-hint={currentPartInfo.aiHint}
+                                unoptimized
+                                onError={(e) => {
+                                  console.error('Error cargando imagen:', currentPartInfo.imageUrl);
+                                  // Usar una imagen placeholder si falla
+                                  (e.target as HTMLImageElement).src = '/images/placeholder.png';
+                                }}
                               />
                             </div>
                             
@@ -357,6 +437,8 @@ const KartPage: NextPage = () => {
           </TabsContent>
         </Tabs>
       </Section>
+      
+      <HorizontalAd section="kart" />
     </>
   );
 };

@@ -35,7 +35,14 @@ async function getProductsByCategory(categorySlug: string, department?: string):
     // Filtrar productos por categoría y departamento
     const filteredProducts = allProducts.filter(product => {
       const matchesCategory = product.category.toLowerCase().replace(/\s+/g, '-') === categorySlug;
-      const matchesDepartment = !department || department === 'general' || product.department === department;
+      
+      // Lógica de departamento:
+      // - Si no hay departamento o es 'general', mostrar todos los productos de la categoría
+      // - Si hay un departamento específico, mostrar productos de ese departamento + productos de "General"
+      const matchesDepartment = !department || department === 'general' || 
+                               product.department === department || 
+                               product.department === 'General';
+      
       return matchesCategory && matchesDepartment;
     });
 

@@ -9,9 +9,8 @@ import { z } from "zod";
 import { createPilot, updatePilot } from '@/app/admin/pilots/actions';
 import type { Pilot } from "@/lib/types";
 
-import { getAllCategories } from '@/lib/data-service';
 import { uploadToCloudinary } from '@/lib/cloudinary';
-import type { Category } from '@/lib/types';
+import { FIXED_CATEGORIES } from '@/lib/categories';
 
 import { Button } from "@/components/ui/button";
 import {
@@ -82,26 +81,8 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
   const [kartModelFile, setKartModelFile] = useState<File | null>(null);
   const [kartModelName, setKartModelName] = useState<string | null>(pilot?.model_3d_url ? pilot.model_3d_url.split('/').pop()! : null);
 
-  // Lista por defecto en caso de que aún no exista la tabla o falle la carga
-  const DEFAULT_CATEGORY_OPTIONS = useMemo(
-    () => [
-      '100cc JUNIOR',
-      '125cc PROFESIONAL',
-      'BABY KART',
-      'F200 STANDARD',
-      'F200 SUPER',
-      'F200 MASTER',
-      'INFANTIL 65',
-      'MASTER X30',
-      'MINI 60',
-      'PROFESIONAL T35',
-      'VORTEX 100',
-      'F390',
-    ],
-    []
-  );
-
-  const [categoryOptions, setCategoryOptions] = useState<string[]>(DEFAULT_CATEGORY_OPTIONS);
+  // Usar las categorías fijas definidas
+  const categoryOptions = FIXED_CATEGORIES;
 
   const isEditing = !!pilot;
 
@@ -128,28 +109,7 @@ export default function PilotFormV2({ pilot }: PilotFormProps) {
     },
   });
 
-  // Cargar categorías desde Firebase para poblar el selector
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const categoriesData = await getAllCategories();
-        const names = categoriesData.map(c => c.name).filter(Boolean);
-        // Asegurar que la categoría del piloto en edición esté presente
-        const withEditing = pilot?.category && !names.includes(pilot.category)
-          ? [...names, pilot.category]
-          : names;
-        setCategoryOptions(withEditing.length > 0 ? withEditing : DEFAULT_CATEGORY_OPTIONS);
-      } catch {
-        // Si falla, mantenemos las opciones por defecto
-        setCategoryOptions(prev => {
-          if (pilot?.category && !prev.includes(pilot.category)) return [...prev, pilot.category];
-          return prev;
-        });
-      }
-    };
-    loadCategories();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+
 
   const { fields: achievementFields, append: appendAchievement, remove: removeAchievement } = useFieldArray({
     control: form.control,

@@ -2,7 +2,7 @@
 // Migrado a Firebase - Ya no usa Supabase
 import NewsSection from '@/components/sections/NewsSection';
 import PageTitle from '@/components/shared/PageTitle';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import type { News } from '@/lib/types';
 import { getAllNews } from '@/lib/data-service';
 
@@ -24,7 +24,7 @@ export default async function NoticiasPage() {
     <>
       <PageTitle title="Noticias" subtitle="KartXperience Bolivia" />
       <NewsSection condensed={false} showTitle={false} news={articles as unknown as News[]} />
-      <AdBanner />
+      <HorizontalAd section="noticias" />
     </>
   );
 }

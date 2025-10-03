@@ -23,12 +23,6 @@ const podiumTypeLabels: { [key: string]: string } = {
 };
 
 export default function EventPodiumResults({ podiums }: EventPodiumResultsProps) {
-    console.log('🔍 DEBUG - EventPodiumResults received:', {
-        podiums,
-        type: typeof podiums,
-        isArray: Array.isArray(podiums),
-        length: podiums?.length
-    });
 
     if (!podiums || !Array.isArray(podiums) || podiums.length === 0) {
         return (

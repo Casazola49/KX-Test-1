@@ -64,8 +64,8 @@ const Header: React.FC = () => {
     setMounted(true);
 
     const checkAuth = () => {
-      const token = Cookies.get('admin-token');
-      setIsAuthenticated(!!token);
+      const authCookie = Cookies.get('admin-auth');
+      setIsAuthenticated(authCookie === 'true');
     };
 
     // Initial check
@@ -84,7 +84,7 @@ const Header: React.FC = () => {
 
   const handleLogout = async () => {
     await fetch('/api/logout', { method: 'POST' });
-    Cookies.remove('admin-token'); // Immediately remove cookie from client
+    Cookies.remove('admin-auth'); // Immediately remove auth cookie from client
     setIsAuthenticated(false);
     router.push('/');
     router.refresh();
@@ -110,7 +110,7 @@ const Header: React.FC = () => {
 
     return (
         <Button variant="outline" size="sm" asChild>
-            <Link href="/login">
+            <Link href="/cafesito">
                 <LogIn className="mr-2 h-4 w-4" /> Admin
             </Link>
         </Button>

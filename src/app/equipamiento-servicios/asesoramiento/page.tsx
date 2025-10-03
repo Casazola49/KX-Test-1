@@ -1,6 +1,6 @@
 
 import PageTitle from '@/components/shared/PageTitle';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import { Mechanic } from '@/lib/types';
 import AsesoramientoClient from '@/components/client/AsesoramientoClient';
 import { cn } from '@/lib/utils';
@@ -42,7 +42,7 @@ export default async function AsesoramientoPage() {
       </main>
 
       <div className="mt-24">
-        <AdBanner />
+        <HorizontalAd section="equipamiento" />
       </div>
     </div>
   );

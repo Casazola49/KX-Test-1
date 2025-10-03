@@ -92,19 +92,25 @@ export async function getPilotBySlug(slug: string): Promise<Pilot | null> {
     query(collection(db, COLLECTIONS.PILOTS), where('slug', '==', slug), limit(1))
   );
   if (snapshot.empty) return null;
-  const doc = snapshot.docs[0];
-  const pilot = convertTimestamps({ id: doc.id, ...doc.data() });
+  const pilotDoc = snapshot.docs[0];
+  const pilot = convertTimestamps({ id: pilotDoc.id, ...pilotDoc.data() });
   
-  // Resolver nombre de categoría si el campo 'category' contiene un ID (UUID)
-  if (pilot.category && pilot.category.length > 20 && pilot.category.includes('-')) {
-    try {
-      const categoryDoc = await getDoc(doc(db, COLLECTIONS.CATEGORIES, pilot.category));
-      if (categoryDoc.exists()) {
-        const categoryData = categoryDoc.data();
-        pilot.category = categoryData.name;
+  // Resolver nombre de categoría si el campo 'category' contiene un ID (UUID o similar)
+  if (pilot.category && typeof pilot.category === 'string') {
+    // Detectar si es un ID: contiene guiones y tiene más de 20 caracteres, o empieza con "0x"
+    const isId = (pilot.category.length > 20 && pilot.category.includes('-')) || 
+                 pilot.category.startsWith('0x');
+    
+    if (isId) {
+      try {
+        const categoryDoc = await getDoc(doc(db, COLLECTIONS.CATEGORIES, pilot.category));
+        if (categoryDoc.exists()) {
+          const categoryData = categoryDoc.data();
+          pilot.category = categoryData.name;
+        }
+      } catch (error) {
+        console.error('Error resolving category for pilot:', pilot.id, error);
       }
-    } catch (error) {
-      console.error('Error resolving category for pilot:', pilot.id, error);
     }
   }
   
@@ -303,7 +309,22 @@ export async function getPilotById(id: string): Promise<Pilot | null> {
     const docSnap = await getDoc(docRef);
     
     if (docSnap.exists()) {
-      return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+      const pilot = convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+      
+      // Resolver nombre de categoría si el campo 'category' contiene un ID (UUID)
+      if (pilot.category && pilot.category.length > 20 && pilot.category.includes('-')) {
+        try {
+          const categoryDoc = await getDoc(doc(db, COLLECTIONS.CATEGORIES, pilot.category));
+          if (categoryDoc.exists()) {
+            const categoryData = categoryDoc.data();
+            pilot.category = categoryData.name;
+          }
+        } catch (error) {
+          console.error('Error resolving category for pilot:', pilot.id, error);
+        }
+      }
+      
+      return pilot;
     }
     return null;
   } catch (error) {
@@ -389,18 +410,22 @@ export async function createChatMessage(messageData: { message: string; author: 
     ...messageData,
     createdAt: Timestamp.now()
   });
+  
+  // Limpiar mensajes antiguos automáticamente (mantener solo los últimos 20)
+  await cleanOldChatMessages(20);
 }
 
-export async function getChatMessages() {
+export async function getChatMessages(limitCount: number = 20) {
   const snapshot = await getDocs(
     query(
       collection(db, 'live_chat_messages'),
-      orderBy('createdAt', 'asc'),
-      limit(50)
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
     )
   );
   
-  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  // Invertir el orden para mostrar los más antiguos primero
+  return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() })).reverse();
 }
 
 export async function clearChatMessages() {
@@ -408,6 +433,28 @@ export async function clearChatMessages() {
   
   const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
   await Promise.all(deletePromises);
+}
+
+// Función para limpiar mensajes antiguos automáticamente
+async function cleanOldChatMessages(keepCount: number = 20) {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, 'live_chat_messages'),
+        orderBy('createdAt', 'desc')
+      )
+    );
+    
+    // Si hay más mensajes que el límite, eliminar los más antiguos
+    if (snapshot.docs.length > keepCount) {
+      const docsToDelete = snapshot.docs.slice(keepCount);
+      const deletePromises = docsToDelete.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      console.log(`🧹 Limpiados ${docsToDelete.length} mensajes antiguos del chat`);
+    }
+  } catch (error) {
+    console.error('Error limpiando mensajes antiguos:', error);
+  }
 }
 
 export async function createNews(newsData: any) {
@@ -847,6 +894,56 @@ export async function getMechanicById(id: string) {
   }
 }
 
+export async function getMechanicsByDepartment(department: string) {
+  try {
+    if (department === 'General') {
+      // Si es "General", devolver todos los mecánicos
+      const snapshot = await getDocs(
+        query(
+          collection(db, COLLECTIONS.MECHANICS),
+          orderBy('createdAt', 'desc')
+        )
+      );
+      return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    } else {
+      // Si es un departamento específico, devolver mecánicos de ese departamento + mecánicos de "General"
+      const [deptSnapshot, generalSnapshot] = await Promise.all([
+        getDocs(
+          query(
+            collection(db, COLLECTIONS.MECHANICS),
+            where('department', '==', department),
+            orderBy('createdAt', 'desc')
+          )
+        ),
+        getDocs(
+          query(
+            collection(db, COLLECTIONS.MECHANICS),
+            where('department', '==', 'General'),
+            orderBy('createdAt', 'desc')
+          )
+        )
+      ]);
+      
+      const deptMechanics = deptSnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+      const generalMechanics = generalSnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+      
+      // Combinar y eliminar duplicados por ID
+      const allMechanics = [...deptMechanics, ...generalMechanics];
+      const uniqueMechanics = allMechanics.filter((mechanic, index, self) => 
+        index === self.findIndex(m => m.id === mechanic.id)
+      );
+      
+      // Ordenar por fecha de creación
+      return uniqueMechanics.sort((a, b) => 
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+    }
+  } catch (error) {
+    console.error('Error getting mechanics by department:', error);
+    return [];
+  }
+}
+
 // KARTS 3D
 export async function getAllKarts() {
   try {
@@ -967,12 +1064,27 @@ export async function getLiveStreamConfig() {
 export async function updateLiveStreamConfig(configData: any) {
   try {
     const docRef = doc(db, COLLECTIONS.LIVE_STREAMS, 'main-stream');
+    
+    // Verificar si el documento existe
+    const docSnap = await getDoc(docRef);
+    
     const updatedConfig = {
       ...configData,
       updated_at: Timestamp.now()
     };
     
-    await updateDoc(docRef, updatedConfig);
+    if (docSnap.exists()) {
+      // Actualizar documento existente
+      await updateDoc(docRef, updatedConfig);
+    } else {
+      // Crear documento si no existe (usando setDoc en lugar de updateDoc)
+      const { setDoc } = await import('firebase/firestore');
+      await setDoc(docRef, {
+        ...updatedConfig,
+        created_at: Timestamp.now()
+      });
+    }
+    
     return { success: true };
   } catch (error) {
     console.error('Error updating live stream config:', error);
@@ -1051,14 +1163,48 @@ export async function getProductsByCategory(category: string) {
 
 export async function getProductsByDepartment(department: string) {
   try {
-    const snapshot = await getDocs(
-      query(
-        collection(db, COLLECTIONS.PRODUCTS),
-        where('department', '==', department),
-        orderBy('createdAt', 'desc')
-      )
-    );
-    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    if (department === 'General') {
+      // Si es "General", devolver todos los productos
+      const snapshot = await getDocs(
+        query(
+          collection(db, COLLECTIONS.PRODUCTS),
+          orderBy('createdAt', 'desc')
+        )
+      );
+      return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    } else {
+      // Si es un departamento específico, devolver productos de ese departamento + productos de "General"
+      const [deptSnapshot, generalSnapshot] = await Promise.all([
+        getDocs(
+          query(
+            collection(db, COLLECTIONS.PRODUCTS),
+            where('department', '==', department),
+            orderBy('createdAt', 'desc')
+          )
+        ),
+        getDocs(
+          query(
+            collection(db, COLLECTIONS.PRODUCTS),
+            where('department', '==', 'General'),
+            orderBy('createdAt', 'desc')
+          )
+        )
+      ]);
+      
+      const deptProducts = deptSnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+      const generalProducts = generalSnapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+      
+      // Combinar y eliminar duplicados por ID
+      const allProducts = [...deptProducts, ...generalProducts];
+      const uniqueProducts = allProducts.filter((product, index, self) => 
+        index === self.findIndex(p => p.id === product.id)
+      );
+      
+      // Ordenar por fecha de creación
+      return uniqueProducts.sort((a, b) => 
+        new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+      );
+    }
   } catch (error) {
     console.error('Error getting products by department:', error);
     return [];
@@ -1167,5 +1313,150 @@ export async function getProductById(id: string) {
   } catch (error) {
     console.error('Error getting product by ID:', error);
     return null;
+  }
+}
+
+// ===== FUNCIONES DE REDES SOCIALES (RRSS) =====
+
+export async function getAllSocialMediaPosts() {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, 'social_media_posts'),
+        orderBy('created_at', 'desc')
+      )
+    );
+    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting social media posts:', error);
+    return [];
+  }
+}
+
+export async function getSocialMediaPost(id: string) {
+  try {
+    const docRef = doc(db, 'social_media_posts', id);
+    const docSnap = await getDoc(docRef);
+    
+    if (docSnap.exists()) {
+      return convertTimestamps({ id: docSnap.id, ...docSnap.data() });
+    }
+    return null;
+  } catch (error) {
+    console.error('Error getting social media post:', error);
+    return null;
+  }
+}
+
+export async function getActiveSocialMediaPosts() {
+  try {
+    const snapshot = await getDocs(
+      query(
+        collection(db, 'social_media_posts'),
+        where('is_active', '==', true),
+        orderBy('created_at', 'desc')
+      )
+    );
+    return snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+  } catch (error) {
+    console.error('Error getting active social media posts:', error);
+    return [];
+  }
+}
+
+export async function getSocialMediaPostsByPlatform(platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook') {
+  try {
+    // Obtener todos los posts y filtrar en el cliente
+    const snapshot = await getDocs(
+      query(
+        collection(db, 'social_media_posts'),
+        orderBy('created_at', 'desc')
+      )
+    );
+    
+    const allPosts = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    return allPosts.filter(post => post.platform === platform && post.is_active).slice(0, 5);
+  } catch (error) {
+    console.error(`Error getting ${platform} posts:`, error);
+    return [];
+  }
+}
+
+export async function createSocialMediaPost(postData: {
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook';
+  post_url: string;
+  title?: string;
+  description?: string;
+  thumbnail_url?: string;
+  is_active: boolean;
+}) {
+  try {
+    const docRef = await addDoc(collection(db, 'social_media_posts'), {
+      ...postData,
+      created_at: Timestamp.now(),
+      updated_at: Timestamp.now()
+    });
+    return docRef.id;
+  } catch (error) {
+    console.error('Error creating social media post:', error);
+    throw error;
+  }
+}
+
+export async function updateSocialMediaPost(id: string, postData: {
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook';
+  post_url: string;
+  title?: string;
+  description?: string;
+  thumbnail_url?: string;
+  is_active: boolean;
+}) {
+  try {
+    const docRef = doc(db, 'social_media_posts', id);
+    await updateDoc(docRef, {
+      ...postData,
+      updated_at: Timestamp.now()
+    });
+  } catch (error) {
+    console.error('Error updating social media post:', error);
+    throw error;
+  }
+}
+
+export async function deleteSocialMediaPost(id: string) {
+  try {
+    const docRef = doc(db, 'social_media_posts', id);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error deleting social media post:', error);
+    throw error;
+  }
+}
+
+export async function getLatestSocialMediaPostsByPlatform() {
+  try {
+    // Obtener todos los posts y filtrar en el cliente para evitar índices compuestos
+    const snapshot = await getDocs(
+      query(
+        collection(db, 'social_media_posts'),
+        orderBy('created_at', 'desc')
+      )
+    );
+    
+    const allPosts = snapshot.docs.map(doc => convertTimestamps({ id: doc.id, ...doc.data() }));
+    
+    // Filtrar por plataforma y estado activo en el cliente
+    const platforms = ['youtube', 'instagram', 'tiktok', 'facebook'];
+    const results = {};
+    
+    for (const platform of platforms) {
+      const platformPosts = allPosts.filter(post => post.platform === platform && post.is_active);
+      results[platform] = platformPosts.length > 0 ? platformPosts[0] : null;
+    }
+    
+    return results;
+  } catch (error) {
+    console.error('Error getting latest posts by platform:', error);
+    return { youtube: null, instagram: null, tiktok: null, facebook: null };
   }
 }

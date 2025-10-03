@@ -41,7 +41,7 @@ const FormSchema = z.object({
 type FormValues = z.infer<typeof FormSchema>;
 interface MechanicFormProps { mechanic?: Mechanic; }
 type MechanicFormState = { message: string; errors?: z.ZodIssue[]; success: boolean; };
-const departments = ['Servicio Internacional', 'Cochabamba', 'La Paz', 'Santa Cruz', 'Oruro', 'Potosi', 'Chuquisaca', 'Tarija'];
+const departments = ['General', 'Cochabamba', 'La Paz', 'Santa Cruz', 'Oruro', 'Potosi', 'Chuquisaca', 'Tarija'];
 
 export default function MechanicForm({ mechanic }: MechanicFormProps) {
   const router = useRouter();
@@ -135,8 +135,15 @@ export default function MechanicForm({ mechanic }: MechanicFormProps) {
                           <FormLabel>Departamento / Tipo de Servicio</FormLabel>
                           <Select onValueChange={field.onChange} defaultValue={field.value}>
                             <FormControl><SelectTrigger><SelectValue placeholder="Selecciona una opción" /></SelectTrigger></FormControl>
-                            <SelectContent>{departments.map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}</SelectContent>
+                            <SelectContent>
+                              <SelectItem value="General">General (Aparece en todos los departamentos)</SelectItem>
+                              {departments.slice(1).map(dept => <SelectItem key={dept} value={dept}>{dept}</SelectItem>)}
+                            </SelectContent>
                           </Select>
+                          <FormDescription>
+                            "General" hace que el asesor aparezca en todos los departamentos. 
+                            Departamentos específicos solo aparecen en su departamento + asesores generales.
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                     )}/>
