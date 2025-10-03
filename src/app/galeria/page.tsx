@@ -1,7 +1,8 @@
 
 // Migrado a Firebase - Ya no usa Supabase
 import PageTitle from '@/components/shared/PageTitle';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
+import SocialMediaSection from '@/components/sections/SocialMediaSection';
 import type { GalleryItem } from '@/lib/types';
 import { getAllGalleryItems } from '@/lib/data-service';
 import GalleryClient from '@/components/client/GalleryClient';
@@ -43,9 +44,15 @@ export default async function GaleriaPage() {
   return (
     <>
       <PageTitle title="Galería Multimedia" subtitle="Capturando la Emoción" />
-      {/* Usamos el nuevo componente de cliente */}
+      
+      {/* Sección de Redes Sociales */}
+      <div className="container mx-auto px-4 py-8">
+        <SocialMediaSection />
+      </div>
+      
+      {/* Galería tradicional */}
       <GalleryClient items={items} tags={tags} />
-      <AdBanner />
+      <HorizontalAd section="galeria" />
     </>
   );
 }

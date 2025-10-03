@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -47,7 +48,7 @@ export default function ContactoPage() {
     toast({
       title: "Mensaje Enviado",
       description: "Gracias por contactarnos. Te responderemos pronto.",
-      variant: "default", 
+      variant: "default",
     });
     form.reset();
   }
@@ -84,7 +85,7 @@ export default function ContactoPage() {
                       <FormItem>
                         <FormLabel>Correo Electrónico</FormLabel>
                         <FormControl>
-                          <Input type="email" placeholder="tu@correo.com" {...field} />
+                          <Input type="email" placeholder="kartxperiencebo@gmail.com" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -132,7 +133,7 @@ export default function ContactoPage() {
                   <Mail size={20} className="mr-3 mt-1 text-primary flex-shrink-0" />
                   <div>
                     <h4 className="font-semibold">Correo Electrónico</h4>
-                    <a href="mailto:info@kartxperience.bo" className="text-muted-foreground hover:text-primary">info@kartxperience.bo</a>
+                    <a href="mailto:kartxperiencebo@gmail.com" className="text-muted-foreground hover:text-primary">kartxperiencebo@gmail.com</a>
                   </div>
                 </div>
                 <div className="flex items-start">
@@ -168,6 +169,7 @@ export default function ContactoPage() {
           </div>
         </div>
       </Section>
+      <HorizontalAd section="contacto" />
     </>
   );
 }

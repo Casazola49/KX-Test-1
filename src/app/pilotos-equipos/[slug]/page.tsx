@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { Card, CardTitle, CardDescription, CardContent, CardHeader } from '@/components/ui/card';
 import { getPilotBySlug } from '@/lib/data-service';
 import ModelViewer from '@/components/client/ModelViewer';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 
 export const dynamic = 'force-dynamic';
 
@@ -139,6 +140,8 @@ export default async function PilotDetailPage({ params }: { params: { slug: stri
             </Card>
         )}
       </Section>
+      
+      <HorizontalAd section="pilotos" />
     </>
   );
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, Suspense } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PageTitle from '@/components/shared/PageTitle';
 import PilotDriverCard from '@/components/shared/PilotDriverCard';
@@ -10,6 +10,8 @@ import { Pilot, FullEvent, GroupedPodiums } from '@/lib/types';
 import { Frown, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useOptimizedPilotFiltering, usePilotImageOptimization, useOptimizedSearch, useLazyComponentLoading } from '@/hooks/usePilotsOptimization';
+import { OptimizedLoading } from '@/components/ui/OptimizedLoading';
 
 interface Props {
   pilots: Pilot[];
@@ -28,54 +30,20 @@ const EmptyState = ({ message }: { message: string }) => (
 
 export default function PilotsPageClient({ pilots, events, initialGroupedPodiums, availableCategories }: Props) {
   const [activeTab, setActiveTab] = useState('pilots');
-  const [searchTerm, setSearchTerm] = useState('');
-  // SOLUCIÓN: El estado ahora maneja el string de la categoría seleccionada, o 'Todas'.
   const [selectedCategory, setSelectedCategory] = useState<string>('Todas');
+
+  // Usar hooks optimizados
+  const { searchTerm, debouncedSearchTerm, setSearchTerm } = useOptimizedSearch('', 300);
+  const { imagesPreloaded } = usePilotImageOptimization(pilots);
+  const { shouldLoadHeavyComponents } = useLazyComponentLoading();
 
   // Los botones de filtro se generan a partir de las categorías que llegan del servidor.
   const displayCategories = useMemo(() => ['Todas', ...availableCategories], [availableCategories]);
 
-  const filteredAndGroupedPilots = useMemo(() => {
-    let filtered = pilots;
+  // Usar el hook optimizado para filtrado y agrupación
+  const filteredAndGroupedPilots = useOptimizedPilotFiltering(pilots, debouncedSearchTerm, selectedCategory);
 
-    // Filtrado por término de búsqueda
-    if (searchTerm) {
-        filtered = filtered.filter(p =>
-            `${p.firstName} ${p.lastName}`.toLowerCase().includes(searchTerm.toLowerCase())
-        );
-    }
-    
-    // Filtrado por categoría (la lógica clave corregida)
-    if (selectedCategory !== 'Todas') {
-        filtered = filtered.filter(p => p.category === selectedCategory);
-    }
-    
-    // Agrupación de pilotos por su categoría
-    const grouped = filtered.reduce((acc, pilot) => {
-        // Usamos el nombre de la categoría (que ya es un string) como clave.
-        const categoryKey = pilot.category || 'Sin Categoría';
-        if (!acc[categoryKey]) {
-          acc[categoryKey] = [];
-        }
-        acc[categoryKey].push(pilot);
-        return acc;
-      }, {} as Record<string, Pilot[]>);
-
-    // Ordenar las claves de categoría (los nombres) para una visualización consistente
-    const sortedCategoryKeys = Object.keys(grouped).sort((a, b) => {
-        if (a === 'Sin Categoría') return 1; // 'Sin Categoría' siempre al final
-        if (b === 'Sin Categoría') return -1;
-        return a.localeCompare(b); // Orden alfabético para el resto
-    });
-    
-    // Reconstruir el objeto agrupado con las claves ya ordenadas
-    const sortedGrouped: Record<string, Pilot[]> = {};
-    for (const key of sortedCategoryKeys) {
-        sortedGrouped[key] = grouped[key];
-    }
-    return sortedGrouped;
-
-  }, [pilots, searchTerm, selectedCategory, availableCategories]);
+  // Verificación de orden alfabético removida para producción
 
 
   return (
@@ -131,10 +99,22 @@ export default function PilotsPageClient({ pilots, events, initialGroupedPodiums
 
         <TabsContent value="classification">
           {events && events.length > 0 ? (
-             <ClassificationClient 
-                events={events}
-                initialGroupedPodiums={initialGroupedPodiums}
-             />
+            <Suspense fallback={
+              <div className="flex justify-center items-center py-12">
+                <OptimizedLoading size="lg" />
+              </div>
+            }>
+              {shouldLoadHeavyComponents ? (
+                <ClassificationClient 
+                  events={events}
+                  initialGroupedPodiums={initialGroupedPodiums}
+                />
+              ) : (
+                <div className="flex justify-center items-center py-12">
+                  <OptimizedLoading size="lg" />
+                </div>
+              )}
+            </Suspense>
           ) : (
             <EmptyState message="Los podios y resultados se mostrarán aquí tan pronto como se publiquen después de un evento." />
           )}

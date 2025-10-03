@@ -40,7 +40,7 @@ export default function EventListClient({ events }: EventListClientProps) {
   return (
     <Card className="shadow-lg">
       <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Eventos del Calendario</CardTitle>
+        <CardTitle>Eventos de Carreras</CardTitle>
         <Button onClick={handleAddNew}>
           <FilePlus className="mr-2 h-4 w-4" />
           Añadir Nuevo Evento

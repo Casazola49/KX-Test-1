@@ -3,7 +3,8 @@ import Section from '@/components/shared/Section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
-import { CheckSquare, Users, ShieldCheck, Award, Map, DollarSign, Heart } from 'lucide-react';
+import { Users, ShieldCheck, Award, Map, DollarSign, Heart } from 'lucide-react';
+import ServerHorizontalAd from '@/components/shared/ServerHorizontalAd';
 
 const steps = [
   {
@@ -72,6 +73,8 @@ export default function ComoSerPilotoPage() {
             <Link href="/contacto">Contáctanos para más Información</Link>
           </Button>
         </div>
+
+        <ServerHorizontalAd section="como-ser-piloto" />
       </Section>
     </>
   );

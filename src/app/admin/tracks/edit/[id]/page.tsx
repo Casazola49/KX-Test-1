@@ -16,10 +16,21 @@ async function getTrack(id: string): Promise<TrackInfo | null> {
             return null;
         }
         
+        // Mapear los campos de Firebase a la estructura esperada por el formulario
         return {
-            ...track,
-            gallery_image_urls: track.gallery_image_urls || [],
+            id: track.id,
+            name: track.name,
+            location: track.location,
+            description: track.description,
+            length: track.length,
+            width: track.width,
+            curves: track.curves,
+            altitude: track.altitude,
+            record: track.record,
+            max_speed: track.max_speed,
             infrastructure: track.infrastructure || [],
+            imageUrl: track.image_url, // Mapear image_url -> imageUrl
+            galleryImageUrls: track.gallery_image_urls || [], // Mapear gallery_image_urls -> galleryImageUrls
         } as TrackInfo;
     } catch (error) {
         console.error("Error fetching track for editing from Firebase:", error);

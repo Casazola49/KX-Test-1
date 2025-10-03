@@ -45,7 +45,8 @@ const podiumSchema = z.object({
 const eventFormSchema = z.object({
   name: z.string().min(3, 'El nombre debe tener al menos 3 caracteres.'),
   eventDate: z.string().min(1, 'Debes seleccionar una fecha.'),
-  eventTime: z.string().min(1, 'Debes especificar una hora.'),
+  eventTime: z.string().min(1, 'Debes especificar una hora de inicio.'),
+  eventEndTime: z.string().min(1, 'Debes especificar una hora de finalización.'),
   trackId: z.string().min(1, 'Debes seleccionar una pista.'),
   description: z.string().optional(),
   promotionalImage: z.any().optional(),
@@ -93,6 +94,10 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
   const [initialDate, initialTime] = (eventToEdit as any)?.event_date 
     ? formatDateForInput(new Date((eventToEdit as any).event_date)) 
     : ['', ''];
+  
+  const [initialEndDate, initialEndTime] = (eventToEdit as any)?.event_end_date 
+    ? formatDateForInput(new Date((eventToEdit as any).event_end_date)) 
+    : ['', ''];
 
   const form = useForm<EventFormValues>({
     resolver: zodResolver(eventFormSchema),
@@ -100,6 +105,7 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
         name: eventToEdit.name,
         eventDate: initialDate,
         eventTime: initialTime.substring(0, 5),
+        eventEndTime: initialEndTime ? initialEndTime.substring(0, 5) : '18:00',
         trackId: eventToEdit.track_id,
         description: eventToEdit.description || '',
         existingPromotionalImage: eventToEdit.promotional_image_url || '',
@@ -124,6 +130,7 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
         name: '', 
         eventDate: '', 
         eventTime: '09:00', 
+        eventEndTime: '18:00',
         trackId: '', 
         description: '', 
         podiums: [],
@@ -158,11 +165,23 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
       }
     }
 
+    // Validar que la hora de finalización sea posterior a la de inicio
+    if (data.eventTime >= data.eventEndTime) {
+      toast({
+        title: "Error",
+        description: "La hora de finalización debe ser posterior a la hora de inicio.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const formData = new FormData();
     const combinedDateTime = `${data.eventDate}T${data.eventTime}:00`;
+    const combinedEndDateTime = `${data.eventDate}T${data.eventEndTime}:00`;
     
     formData.append('name', data.name);
     formData.append('eventDateTime', combinedDateTime);
+    formData.append('eventEndDateTime', combinedEndDateTime);
     formData.append('trackId', data.trackId);
     formData.append('description', data.description || '');
     
@@ -396,23 +415,26 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
           <CardHeader><CardTitle>Detalles del Evento</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             <FormField name="name" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Nombre del Evento</FormLabel><FormControl><Input placeholder="Ej: Campeonato Nacional - Día 1" {...field} /></FormControl><FormMessage /></FormItem> )} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <FormField name="eventDate" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Fecha del Evento</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem> )} />
                 <FormField name="eventTime" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Hora de Inicio</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem> )} />
+                <FormField name="eventEndTime" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Hora de Finalización</FormLabel><FormControl><Input type="time" {...field} /></FormControl><FormMessage /></FormItem> )} />
             </div>
             <FormField name="trackId" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Pista</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Selecciona una pista" /></SelectTrigger></FormControl><SelectContent>{tracks.map((track) => (<SelectItem key={track.id} value={track.id}>{track.name}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem> )}/>
             <FormField name="description" control={form.control} render={({ field }) => ( <FormItem><FormLabel>Descripción (Opcional)</FormLabel><FormControl><Textarea placeholder="Añade una descripción corta sobre el evento..." {...field} /></FormControl><FormMessage /></FormItem> )}/>
             <FormField control={form.control} name="promotionalImage" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Imagen Promocional Principal</FormLabel>
-                    <FormControl><ImageUploader field={field} /></FormControl>
+                    <FormControl>
+                        <ImageUploader 
+                            field={field} 
+                            existingImages={isEditMode && eventToEdit.promotional_image_url ? [eventToEdit.promotional_image_url] : []}
+                        />
+                    </FormControl>
                     <FormDescription>Esta es la imagen principal que se mostrará en la cabecera.</FormDescription>
-                    {/* Mostrar imagen actual y marcar existingPromotionalImage para saltar validación */}
-                    {isEditMode && eventToEdit.promotional_image_url && !field.value && (
-                      <>
+                    {/* Campo oculto para validación */}
+                    {isEditMode && eventToEdit.promotional_image_url && (
                         <input type="hidden" value={eventToEdit.promotional_image_url} {...form.register('existingPromotionalImage' as any)} />
-                        <div className="mt-2 text-sm text-muted-foreground">Imagen actual: <a href={eventToEdit.promotional_image_url} target="_blank" rel="noopener noreferrer" className="underline">ver imagen</a></div>
-                      </>
                     )}
                     <FormMessage />
                 </FormItem>
@@ -420,8 +442,14 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
             <FormField control={form.control} name="galleryImages" render={({ field }) => (
                 <FormItem>
                     <FormLabel>Galería de Imágenes (Opcional)</FormLabel>
-                    <FormControl><ImageUploader field={field} multiple /></FormControl>
-                    <FormDescription>Sube imágenes adicionales sobre el evento. Estas no se borrarán al editar, solo se añadirán nuevas.</FormDescription>
+                    <FormControl>
+                        <ImageUploader 
+                            field={field} 
+                            multiple 
+                            existingImages={isEditMode ? (eventToEdit.gallery_image_urls || []) : []}
+                        />
+                    </FormControl>
+                    <FormDescription>Sube imágenes adicionales sobre el evento. Las imágenes existentes se mantendrán a menos que las elimines.</FormDescription>
                     <FormMessage />
                 </FormItem>
             )} />
@@ -517,21 +545,7 @@ export default function EventForm({ tracks, pilots, categories, eventToEdit }: P
             {form.formState.isSubmitting ? (isEditMode ? 'Guardando...' : 'Creando...') : (isEditMode ? 'Guardar Cambios' : 'Crear Evento')}
           </Button>
           
-          <Button 
-            type="button" 
-            variant="outline" 
-            onClick={() => {
-              console.log('Form values:', form.getValues());
-              console.log('Form errors:', form.formState.errors);
-              console.log('Form is valid:', form.formState.isValid);
-              toast({
-                title: "Debug Info",
-                description: "Revisa la consola para ver los datos del formulario",
-              });
-            }}
-          >
-            Debug
-          </Button>
+
         </div>
       </form>
     </Form>

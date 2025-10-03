@@ -10,21 +10,12 @@ export function cn(...inputs: ClassValue[]) {
 
 // This function is now simplified and relies on the restored types.
 export function groupPodiumsByCategory(podiums: FullPodium[] | null | undefined): GroupedPodiums {
-  console.log('🔍 DEBUG - groupPodiumsByCategory called with:', {
-    podiums,
-    type: typeof podiums,
-    isArray: Array.isArray(podiums),
-    length: podiums?.length
-  });
-
   if (!podiums) {
-    console.log('🔍 DEBUG - podiums is null/undefined, returning empty object');
     return {};
   }
 
   // Ensure podiums is an array
   if (!Array.isArray(podiums)) {
-    console.warn('🚨 groupPodiumsByCategory: podiums is not an array:', typeof podiums, podiums);
     return {};
   }
 
@@ -67,7 +58,7 @@ export function groupPodiumsByCategory(podiums: FullPodium[] | null | undefined)
     return grouped;
 
   } catch (error) {
-    console.error("Failed to group podiums by category:", error);
+    // Silently handle errors in production
     return {};
   }
 }

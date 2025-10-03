@@ -1,14 +1,20 @@
 
 import PageTitle from '@/components/shared/PageTitle';
 import SimpleLiveStreamClient from '@/components/client/SimpleLiveStreamClient';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import Section from '@/components/shared/Section';
 import { Suspense } from 'react';
-import { getLiveStreamSettings } from '@/lib/data';
+import ResourcePreloader from '@/components/optimization/ResourcePreloader';
+import InvisibleOptimizations from '@/components/optimization/InvisibleOptimizations';
+import LiveOptimizations from '@/components/optimization/LiveOptimizations';
 
-async function getLiveStreamSettingsData() {
+
+// Función optimizada para cargar configuración de live stream
+async function getOptimizedLiveStreamSettings() {
     try {
-        const settings = await getLiveStreamSettings();
+        // Usar la función correcta de data-service
+        const { getLiveStreamConfig } = await import('@/lib/data-service');
+        const settings = await getLiveStreamConfig();
         return settings || { is_live: false, stream_title: "Próxima Carrera", iframe_url: null };
     } catch (error) {
         console.error("Error fetching live stream settings:", error);
@@ -17,7 +23,7 @@ async function getLiveStreamSettingsData() {
 }
 
 export default async function LivePage() {
-    const settings = await getLiveStreamSettingsData();
+    const settings = await getOptimizedLiveStreamSettings();
 
     return (
         <>
@@ -34,7 +40,12 @@ export default async function LivePage() {
                     <SimpleLiveStreamClient initialSettings={settings} />
                 </Suspense>
             </Section>
-            <AdBanner />
+            <HorizontalAd section="live" />
+            
+            {/* Optimizaciones invisibles de rendimiento */}
+            <ResourcePreloader />
+            <InvisibleOptimizations />
+            <LiveOptimizations />
         </>
     );
 }

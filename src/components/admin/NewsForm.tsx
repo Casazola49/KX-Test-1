@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
 import Image from "next/image";
 import { UploadCloud, Loader2, ImagePlus } from "lucide-react";
+import ImageUploader from './ImageUploader';
 
 const NewsFormSchema = z.object({
   title: z.string().min(5, { message: 'El título debe tener al menos 5 caracteres.' }),
@@ -139,12 +140,18 @@ export default function NewsForm({ article }: NewsFormProps) {
         <FormItem>
           <FormLabel>Imagen Principal</FormLabel>
           <FormControl>
-            <div className="relative flex flex-col items-center justify-center w-full h-64 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted transition-colors">
-               <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  {mainImagePreview ? (<Image src={mainImagePreview} alt="Vista previa" fill style={{objectFit: "contain"}} className="rounded-lg p-2" />) : (<><UploadCloud className="w-10 h-10 text-muted-foreground mb-2" /><p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Haz clic para subir</span></p></>)}
-               </div>
-               <Input id="main-image-input" type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleMainImageChange} />
-            </div>
+            <ImageUploader 
+              field={{
+                value: mainImageFile ? [mainImageFile] : null,
+                onChange: (files) => {
+                  if (files && files.length > 0) {
+                    setMainImageFile(files[0]);
+                    setMainImagePreview(URL.createObjectURL(files[0]));
+                  }
+                }
+              }}
+              existingImages={isEditing && article?.imageUrl ? [article.imageUrl] : []}
+            />
           </FormControl>
           <FormDescription>{isEditing ? "Sube una nueva imagen para reemplazar la actual." : "Obligatorio."}</FormDescription>
         </FormItem>
@@ -152,25 +159,21 @@ export default function NewsForm({ article }: NewsFormProps) {
         <FormItem>
           <FormLabel>Galería de Imágenes (Opcional)</FormLabel>
           <FormControl>
-            <div className="relative flex flex-col items-center justify-center w-full min-h-[10rem] border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted transition-colors p-4">
-              {galleryPreviews.length > 0 ? (
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                  {galleryPreviews.map((src, index) => (
-                    <div key={index} className="relative aspect-square">
-                      <Image src={src} alt={`Vista previa ${index+1}`} fill style={{objectFit: "cover"}} className="rounded-md" />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center">
-                  <ImagePlus className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
-                  <p className="mb-2 text-sm text-muted-foreground"><span className="font-semibold">Subir imágenes adicionales</span></p>
-                </div>
-              )}
-              <Input id="gallery-images-input" type="file" accept="image/*" multiple className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleGalleryImagesChange} />
-            </div>
+            <ImageUploader 
+              field={{
+                value: galleryImageFiles.length > 0 ? galleryImageFiles : null,
+                onChange: (files) => {
+                  if (files && files.length > 0) {
+                    setGalleryImageFiles(files);
+                    setGalleryPreviews(files.map((file: File) => URL.createObjectURL(file)));
+                  }
+                }
+              }}
+              multiple
+              existingImages={isEditing ? (article?.galleryImageUrls || []) : []}
+            />
           </FormControl>
-          <FormDescription>{isEditing ? "Subir nuevas imágenes reemplazará la galería anterior." : "Añade fotos extra para la noticia."}</FormDescription>
+          <FormDescription>{isEditing ? "Las nuevas imágenes se añadirán a la galería existente." : "Añade fotos extra para la noticia."}</FormDescription>
         </FormItem>
 
         <FormField control={form.control} name="content" render={({ field }) => (<FormItem><FormLabel>Contenido Completo</FormLabel><FormControl><Textarea placeholder="Escribe o pega el contenido completo de la noticia aquí..." rows={15} {...field} /></FormControl><FormDescription>Cada salto de línea se convertirá en un párrafo. No se necesita HTML.</FormDescription><FormMessage /></FormItem>)} />

@@ -13,6 +13,11 @@ export default function SponsorPopupWrapper() {
   const adTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
+    // No mostrar popup en páginas de admin
+    if (pathname.startsWith('/admin')) {
+      return;
+    }
+
     // Reset and set timer for sponsor ad on route change
     if (adTimerRef.current) {
       clearTimeout(adTimerRef.current);
@@ -30,6 +35,11 @@ export default function SponsorPopupWrapper() {
       }
     };
   }, [pathname]); // Rerun effect when pathname changes
+
+  // No renderizar nada en páginas de admin
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return <SponsorPopup isOpen={showSponsorAd} onOpenChange={setShowSponsorAd} />;
 }

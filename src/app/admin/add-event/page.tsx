@@ -2,14 +2,18 @@
 import EventForm from '@/components/admin/EventForm';
 import { 
   getAllTracks, 
-  getAllPilots, 
-  getAllCategories 
+  getAllPilots,
+  getAllCategories
 } from '@/lib/data-service';
+import { ensureCategoriesExist } from '@/lib/init-categories';
 
 export const revalidate = 0;
 
 export default async function AddEventPage() {
   try {
+    // Asegurar que las categorías existan en Firebase
+    await ensureCategoriesExist();
+    
     const [tracks, pilots, categories] = await Promise.all([
       getAllTracks(),
       getAllPilots(),

@@ -4,6 +4,8 @@ import type { Pilot } from '@/lib/types';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { usePilotCardAnimations } from '@/hooks/usePilotsOptimization';
+import { getOptimizedPilotImageProps } from '@/lib/pilots-optimizations';
 
 interface PilotDriverCardProps {
   pilot: Pilot;
@@ -11,6 +13,9 @@ interface PilotDriverCardProps {
 
 const PilotDriverCard: React.FC<PilotDriverCardProps> = ({ pilot }) => {
   const name = `${pilot.firstName || ''} ${pilot.lastName || ''}`.trim() || pilot.name;
+  
+  // Usar hooks optimizados
+  const { getAnimationProps } = usePilotCardAnimations();
   
   // --- REDISEÑO DEL DEGRADADO ---
   // Se eliminan las texturas de líneas y se hace el degradado de color
@@ -22,11 +27,11 @@ const PilotDriverCard: React.FC<PilotDriverCardProps> = ({ pilot }) => {
     `,
   };
 
+  // Las imágenes ahora usan props directas para mejor compatibilidad
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: 'spring', stiffness: 100, damping: 20 }}
+      {...getAnimationProps()}
     >
       <Link href={`/pilotos-equipos/${pilot.slug}`} className="block group rounded-xl overflow-hidden relative shadow-lg hover:shadow-primary/30 transition-all duration-300 transform hover:-translate-y-1">
         <div 
@@ -66,6 +71,9 @@ const PilotDriverCard: React.FC<PilotDriverCardProps> = ({ pilot }) => {
                     alt={`Foto de ${name}`}
                     fill
                     style={{objectFit: "contain", objectPosition: "bottom center"}}
+                    className="pilot-image"
+                    loading="lazy"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                 />
             )}
           </div>

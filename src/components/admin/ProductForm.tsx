@@ -219,13 +219,16 @@ export default function ProductForm({ product }: ProductFormProps) {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="General">General (Todos los departamentos)</SelectItem> 
+                          <SelectItem value="General">General (Aparece en todos los departamentos)</SelectItem> 
                           {departments.map(dept => (
                             <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormDescription>Asigna este producto a un departamento específico.</FormDescription>
+                      <FormDescription>
+                        "General" hace que el producto aparezca en todos los departamentos. 
+                        Departamentos específicos solo aparecen en su departamento + productos generales.
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}

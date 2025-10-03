@@ -51,7 +51,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ nextRace }) => {
             size="lg" 
             className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-full px-8 py-3 text-lg font-semibold transition-all duration-300 hover:scale-110 hover:shadow-2xl hover:shadow-primary/40 active:scale-100"
           >
-            <Link href="/calendario">Ver Calendario Completo</Link>
+            <Link href="/eventos">Ver Eventos Completos</Link>
           </Button>
         </div>
 

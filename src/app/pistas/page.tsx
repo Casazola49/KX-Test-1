@@ -3,7 +3,7 @@
 import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import TrackInfoCard from '@/components/shared/TrackInfoCard';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import type { TrackInfo } from '@/lib/types';
 import { Card } from '@/components/ui/card';
 import { AlertTriangle, ServerCrash } from 'lucide-react';
@@ -75,7 +75,7 @@ export default async function PistasPage() {
       <Section className="py-8 md:py-12">
         {renderContent()}
       </Section>
-      <AdBanner />
+      <HorizontalAd section="pistas" />
     </>
   );
 }

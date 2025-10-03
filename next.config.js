@@ -21,7 +21,11 @@ const nextConfig = {
   // Experimental features para mejor performance
   experimental: {
     // optimizeCss: true, // Deshabilitado temporalmente para evitar error de critters
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
+    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons', 'framer-motion', 'embla-carousel-autoplay'],
+    serverComponentsExternalPackages: ['firebase-admin'],
+    // Optimizaciones adicionales para mejor rendimiento
+    serverMinification: true,
+    instrumentationHook: false,
     turbo: {
       rules: {
         '*.svg': {
@@ -77,11 +81,11 @@ const nextConfig = {
     ];
   },
 
-  // Optimización de imágenes
+  // Optimización de imágenes para mejor rendimiento
   images: {
     formats: ['image/webp', 'image/avif'],
-    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
-    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920], // Reducido para mejor rendimiento
+    imageSizes: [16, 32, 48, 64, 96, 128, 256], // Reducido para mejor rendimiento
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 días
     remotePatterns: [
       {
@@ -92,7 +96,6 @@ const nextConfig = {
         protocol: 'http',
         hostname: 'localhost',
       },
-      // Supabase domains removed - migration complete
     ],
     dangerouslyAllowSVG: true,
     contentDispositionType: 'attachment',
@@ -100,7 +103,7 @@ const nextConfig = {
   },
 
   // Bundle analyzer (solo si se necesita)
-  webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
+  webpack: (config, { isServer }) => {
     // Bundle analyzer
     if (process.env.ANALYZE === 'true') {
       const { BundleAnalyzerPlugin } = require('webpack-bundle-analyzer');

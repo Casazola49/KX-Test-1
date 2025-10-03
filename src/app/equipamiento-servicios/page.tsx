@@ -1,6 +1,6 @@
 
 import PageTitle from '@/components/shared/PageTitle';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import { Product } from '@/lib/types';
 import EquipamientoServiciosClient from '@/components/client/EquipamientoServiciosClient';
 import { Button } from '@/components/ui/button';
@@ -56,7 +56,7 @@ export default async function EquipamientoServiciosPage() {
       </main>
 
       <div className="mt-24">
-        <AdBanner />
+        <HorizontalAd section="equipamiento" />
       </div>
     </div>
   );

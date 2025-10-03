@@ -1,7 +1,7 @@
 import { Event } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, MapPin, Clock } from 'lucide-react';
+import { Calendar, MapPin, Clock, Eye } from 'lucide-react';
 import Link from 'next/link';
 
 interface EventInfoCardProps {
@@ -68,10 +68,10 @@ export default function EventInfoCard({ event }: EventInfoCardProps) {
           )}
 
           <div className="mt-6 pt-4 border-t border-border/30">
-            <Link href="/calendario">
+            <Link href={`/eventos/${event.id}`}>
               <Button variant="outline" className="w-full">
-                <Calendar className="mr-2 h-4 w-4" />
-                Ver Calendario Completo
+                <Eye className="mr-2 h-4 w-4" />
+                Ver Detalles del Evento
               </Button>
             </Link>
           </div>

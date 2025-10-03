@@ -2,7 +2,7 @@ import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
 import { Card, CardContent } from '@/components/ui/card';
 import Image from 'next/image';
-import AdBanner from '@/components/shared/AdBanner';
+import ServerHorizontalAd from '@/components/shared/ServerHorizontalAd';
 
 export default function HistoriaPage() {
   return (
@@ -52,7 +52,7 @@ export default function HistoriaPage() {
           </CardContent>
         </Card>
         
-        <AdBanner />
+        <ServerHorizontalAd section="informacion-historia" />
       </Section>
     </>
   );

@@ -3,7 +3,7 @@ import Section from '@/components/shared/Section';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, Zap, Globe, Wrench } from 'lucide-react';
 import Image from 'next/image';
-import AdBanner from '@/components/shared/AdBanner';
+import ServerHorizontalAd from '@/components/shared/ServerHorizontalAd';
 
 const futureAspects = [
   {
@@ -86,7 +86,7 @@ export default function FuturoPage() {
             <em>KartXperience Bolivia se compromete a ser un actor clave en la configuración de este emocionante futuro.</em>
         </p>
         
-        <AdBanner />
+        <ServerHorizontalAd section="informacion-futuro" />
       </Section>
     </>
   );

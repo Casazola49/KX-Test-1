@@ -250,7 +250,15 @@ export default function EquipamientoServiciosClient({ products }: { products: Pr
 
   // Crear categorías dinámicas basadas en los productos
   const productCategories = useMemo(() => {
-    const productsInDept = products.filter(p => selectedDept === 'General' || p.department === selectedDept);
+    // Si es "General", mostrar todos los productos
+    // Si es un departamento específico, mostrar productos de ese departamento + productos de "General"
+    const productsInDept = products.filter(p => {
+      if (selectedDept === 'General') {
+        return true; // Mostrar todos los productos
+      } else {
+        return p.department === selectedDept || p.department === 'General';
+      }
+    });
     const categoryMap = new Map<string, ProductCategory>();
 
     productsInDept.forEach(product => {

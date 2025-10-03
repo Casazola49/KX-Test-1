@@ -11,6 +11,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import ModelViewer from '@/components/client/ModelViewer';
 import ImageGallery from '@/components/client/ImageGallery'; // Importamos el nuevo componente
+import HorizontalAd from '@/components/shared/HorizontalAd';
 
 export const dynamic = 'force-dynamic';
 
@@ -178,7 +179,7 @@ export default async function PistaDetailPage({ params }: { params: { id: string
                                     <CardContent className="pt-0">
                                         <div className="flex justify-between items-center">
                                             <Button asChild variant="outline" size="sm" className="hover:bg-primary hover:text-primary-foreground">
-                                                <Link href={`/calendario/${event.id}`}>
+                                                <Link href={`/eventos/${event.id}`}>
                                                     <Trophy className="mr-2 h-4 w-4"/>
                                                     {isUpcoming ? 'Ver Detalles' : 'Ver Resultados'}
                                                 </Link>
@@ -208,6 +209,8 @@ export default async function PistaDetailPage({ params }: { params: { id: string
             )}
         </div>
       </Section>
+      
+      <HorizontalAd section="pistas" />
     </>
   );
 }

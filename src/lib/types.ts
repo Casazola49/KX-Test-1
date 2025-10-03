@@ -125,6 +125,7 @@ export interface FullEvent {
     id: string;
     name: string;
     event_date: string; // El campo de la BD
+    event_end_date?: string; // Nueva fecha de finalización
     track_id: string;
     description?: string;
     promotional_image_url?: string;
@@ -289,4 +290,29 @@ export interface NewsArticle {
   created_at?: string;
   slug?: string;
   is_main?: boolean;
+}
+
+export interface SocialMediaPost {
+  id: string;
+  platform: 'youtube' | 'instagram' | 'tiktok' | 'facebook';
+  post_url: string;
+  title?: string;
+  description?: string;
+  thumbnail_url?: string;
+  embed_code?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Advertisement {
+  id: string;
+  name: string;
+  section: string; // 'home', 'noticias', 'eventos', 'pilotos', etc.
+  type: 'horizontal' | 'popup';
+  image_url: string;
+  link_url?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at?: string;
 }

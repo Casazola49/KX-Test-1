@@ -10,7 +10,7 @@ import { News } from '@/lib/types';
 
 import PageTitle from '@/components/shared/PageTitle';
 import Section from '@/components/shared/Section';
-import AdBanner from '@/components/shared/AdBanner';
+import HorizontalAd from '@/components/shared/HorizontalAd';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function NewsDetailPage({ params }: { params: { slug: string } }) {
@@ -96,7 +96,7 @@ export default function NewsDetailPage({ params }: { params: { slug: string } })
 
               {splitContent.part2 && (
                 <div className="my-8 not-prose">
-                  <AdBanner />
+                  <HorizontalAd section="noticias" />
                 </div>
               )}
 
@@ -132,7 +132,7 @@ export default function NewsDetailPage({ params }: { params: { slug: string } })
         </div>
       </Section>
 
-      <AdBanner />
+      <HorizontalAd section="noticias" />
 
       {(((newsItem as any).gallery_image_urls || (newsItem as any).galleryImageUrls) ?? []).length > 0 && (
         <Lightbox

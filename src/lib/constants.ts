@@ -10,7 +10,7 @@ export const NAVIGATION_LINKS: NavItem[] = [
   { label: 'Carrera en Vivo', href: '/live' },
   { label: 'Pilotos y Equipos', href: '/pilotos-equipos' },
   { label: 'Pistas', href: '/pistas' },
-  { label: 'Calendario', href: '/calendario' },
+  { label: 'Eventos', href: '/eventos' },
   { label: 'Galería', href: '/galeria' },
   { label: 'Equipamiento y Servicios', href: '/equipamiento-servicios' }, // Nueva Sección
   { label: 'Reglamento', href: '/reglamento' },
@@ -50,7 +50,7 @@ export const MOCK_NEXT_RACE: RaceEvent = {
     { name: 'Clasificación', time: 'Miercoles 8:00 - 10:00' },
     { name: 'Carrera', time: 'Miercoles 10:00' },
   ],
-  promoImageUrl: '/calendario/carrera sucre 25 de junio.png',
+  promoImageUrl: '/eventos/carrera sucre 25 de junio.png',
   trackLayoutUrl: 'https://placehold.co/600x400.png',
 };
 

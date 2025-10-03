@@ -8,8 +8,10 @@ import HomepagePodium from '@/components/sections/HomepagePodium';
 import NextRaceSection from '@/components/sections/NextRaceSection';
 import HomeGalleryClient from '@/components/client/HomeGalleryClient';
 import FeaturedProductsCarousel from '@/components/shared/FeaturedProductsCarousel';
-import { getEvents, getNews, getPodium } from '@/lib/data';
-import { getAllProducts } from '@/lib/data-service';
+import ServerHorizontalAd from '@/components/shared/ServerHorizontalAd';
+
+import ResourcePreloader from '@/components/optimization/ResourcePreloader';
+import InvisibleOptimizations from '@/components/optimization/InvisibleOptimizations';
 
 // Metadata específica para la página de inicio
 export const metadata: Metadata = {
@@ -18,19 +20,62 @@ export const metadata: Metadata = {
   keywords: 'inicio, karting bolivia, carreras bolivia, automovilismo bolivia',
 };
 
-
 export const revalidate = 0;
 export const dynamic = 'force-dynamic';
 
+// Función optimizada para cargar datos en paralelo con cache inteligente
+async function getOptimizedHomePageData() {
+  try {
+    // Cargar datos con cache inteligente para mejor rendimiento
+    const [events, news, podium, products] = await Promise.allSettled([
+      import('@/lib/performance-optimizations').then(m => m.getCachedEvents()),
+      import('@/lib/performance-optimizations').then(m => m.getCachedNews()),
+      import('@/lib/data').then(m => m.getPodium()), // Podium siempre fresco
+      import('@/lib/performance-optimizations').then(m => m.getCachedProducts())
+    ]);
+
+    return {
+      events: events.status === 'fulfilled' ? events.value : [],
+      news: news.status === 'fulfilled' ? news.value : [],
+      podium: podium.status === 'fulfilled' ? podium.value : { eventName: '', podiums: {} },
+      products: products.status === 'fulfilled' ? products.value : []
+    };
+  } catch (error) {
+    console.error('Error loading homepage data:', error);
+    // Fallback a la carga original si el cache falla
+    try {
+      const [events, news, podium, products] = await Promise.allSettled([
+        import('@/lib/data').then(m => m.getEvents()),
+        import('@/lib/data').then(m => m.getNews()),
+        import('@/lib/data').then(m => m.getPodium()),
+        import('@/lib/data-service').then(m => m.getAllProducts())
+      ]);
+
+      return {
+        events: events.status === 'fulfilled' ? events.value : [],
+        news: news.status === 'fulfilled' ? news.value : [],
+        podium: podium.status === 'fulfilled' ? podium.value : { eventName: '', podiums: {} },
+        products: products.status === 'fulfilled' ? products.value : []
+      };
+    } catch (fallbackError) {
+      console.error('Fallback loading also failed:', fallbackError);
+      return {
+        events: [],
+        news: [],
+        podium: { eventName: '', podiums: {} },
+        products: []
+      };
+    }
+  }
+}
+
 export default async function HomePage() {
   // Forzar que esta página no se almacene en caché.
-  // Esta es la misma estrategia que usa la página de Calendario que sí funciona.
+  // Esta es la misma estrategia que usa la página de Eventos que sí funciona.
   noStore();
 
-  const events = await getEvents();
-  const news = await getNews();
-  const podium = await getPodium();
-  const products = await getAllProducts();
+  // Cargar datos de forma optimizada (en paralelo) pero manteniendo la funcionalidad original
+  const { events, news, podium, products } = await getOptimizedHomePageData();
 
   // Ordenamos los eventos por fecha para asegurarnos de que el próximo sea el correcto.
   const now = new Date();
@@ -39,13 +84,13 @@ export default async function HomePage() {
 
   return (
     <div className="bg-background text-foreground">
-      {/* Hero section sin textura */}
+      {/* Hero section sin textura - ORIGINAL CON TODAS LAS ANIMACIONES */}
       <Suspense fallback={<div className="h-screen bg-background flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full"></div></div>}>
         {/* Pasamos todos los eventos para que el componente Hero pueda determinar si hay algo en vivo */}
         <HomepageHero events={events} />
       </Suspense>
       
-      {/* Contenido con fondo texturizado */}
+      {/* Contenido con fondo texturizado - ORIGINAL */}
       <div className="content-textured-bg">
         <div className="container mx-auto px-4 py-8 space-y-16">
           <Suspense fallback={<div className="h-64 bg-card/50 rounded-lg animate-pulse"></div>}>
@@ -64,10 +109,18 @@ export default async function HomePage() {
         </div>
       </div>
       
-      {/* Carrusel de Productos Destacados */}
+      {/* Carrusel de Productos Destacados - ORIGINAL CON TODAS LAS ANIMACIONES */}
       <Suspense fallback={<div className="h-96 bg-black animate-pulse"></div>}>
         <FeaturedProductsCarousel products={products} />
       </Suspense>
+      
+      <ServerHorizontalAd section="home" />
+      
+      {/* Optimizaciones invisibles de rendimiento */}
+      <ResourcePreloader />
+      <InvisibleOptimizations />
+      
+
     </div>
   );
 }
